@@ -56,3 +56,21 @@ A Streamlit web application for simulating polymer viscosity behavior using the 
    ```bash
    git clone https://github.com/your-username/pama-streamlit.git
    cd pama-streamlit
+
+
+Background & References
+
+This method and model are based on polymer rheology theory, Carreau-Yassuda viscosity models, and the specific needs of measuring polymer solutions with limited instrumentation. For further reading, please consult:
+
+    E. Pérez, D. Alviso, E. Manrique, G. Artana, Laboratorio de Fluidodinámica, Facultad de Ingeniería, Universidad de Buenos Aires.
+
+    Relevant rheology textbooks and Carreau-Yassuda modeling papers.
+
+License
+
+MIT License — feel free to use, modify, and distribute!
+Contact
+
+For questions or collaboration, contact:
+
+    E. Pérez: eperez@fi.uba.ar
