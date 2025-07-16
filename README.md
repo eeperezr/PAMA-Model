@@ -46,7 +46,7 @@ A Streamlit web application for simulating polymer viscosity behavior using the 
 
 ## 📸 Screenshots
 
-> <img width="704" height="450" alt="newplot (1)" src="https://github.com/user-attachments/assets/06ef81a7-a774-49dd-a6b1-f45f02c3075a" />
+<img width="704" height="450" alt="newplot(3)" src="https://github.com/user-attachments/assets/3bd3adab-7eca-45cc-95c7-a501c17ffcc8" />
 
 
 ---
