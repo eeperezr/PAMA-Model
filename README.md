@@ -1,110 +1,58 @@
-# PAMA-Model
+# 🧪 PAMA Rheology Modeling App
 
-PAMA Method for HPAM Rheology — Multi-Implementation
+A Streamlit web application for simulating polymer viscosity behavior using the **PAMA method**. It provides three modeling approaches:
+- 📘 Basic PAMA Model
+- 🌡️ PAMA Model with Temperature Dependence
+- ⚠️ PAMA Model with Degradation
 
-This repository contains implementations of the PAMA (Polymer Apparent Modified Apparatus) method to estimate the full rheological curve (viscosity vs shear rate) of HPAM polymer solutions based on limited experimental data from Brookfield viscometers.
-Overview
+---
 
-The PAMA method is designed to derive a full viscosity vs. shear rate curve for HPAM polymers when only Brookfield-type viscometers are available, which measure viscosity at a single shear rate (7.3 s⁻¹). This method calculates rheological properties considering polymer concentration, molecular weight, and experimental viscosities, also accounting for polymer degradation.
-Implementations
-1. Original R Shiny App Version
+## 🔗 Live App
 
-    Technology: R with Shiny, Shinythemes, Plotly
+> 🚀 [Try it Live on Streamlit Cloud](https://your-app-url.streamlit.app)  
+*(Replace with your actual deployed link)*
 
-    Features:
+---
 
-        User interface for input parameters and results visualization.
+## 📌 Features
 
-        Outputs Carreau-Yassuda viscosity model plots.
+- Interactive Streamlit UI with sliders and inputs
+- Real-time dynamic plots using **Plotly**
+- Export results as CSV
+- Switch between 3 scientifically-backed models
+- Log–log shear rate vs. viscosity plots
+- Easy deployment-ready Python code
 
-        Data download functionality.
+---
 
-    Use case: Interactive web app for easy parameter tweaking and instant visualization.
+## 🧠 About the PAMA Models
 
-Run:
+### 1. Basic PAMA Model
+- Predicts polymer viscosity from concentration and molecular weight
+- Assumes standard conditions (25°C)
+- Implements the Carreau-Yasuda equation
 
-# Install dependencies
-install.packages(c("shiny", "shinythemes", "plotly"))
+### 2. PAMA Model with Temperature
+- Adjusts viscosity predictions based on user-specified temperature (in °C)
+- Calculates temperature-adjusted η₀ and λ (relaxation time)
+- Allows simulation of polymer performance in varying thermal environments
 
-# Run app
-shiny::runApp("app_folder_path")
+### 3. PAMA Model with Degradation
+- Models viscosity reduction due to polymer degradation
+- Uses two experimental η@7.3 values (undegraded and degraded)
+- Computes degradation factor (FD) and predicts degraded rheological profile
 
-2. Modified R Shiny App with Degradation Parameter
+---
 
-    Technology: R with Shiny, Shinythemes, Plotly
+## 📸 Screenshots
 
-    Improvements:
+> 📈 Example plots will appear here.
 
-        Added handling for degraded polymer solutions.
+---
 
-        Inputs include degraded viscosity at 7.3 s⁻¹.
+## 🔧 How to Run Locally
 
-        Shows viscosity curves for both undegraded and degraded polymers.
-
-    Use case: Web app that models polymer degradation effects on viscosity.
-
-Run:
-
-# Install dependencies
-install.packages(c("shiny", "shinythemes", "plotly"))
-
-# Run app
-shiny::runApp("modified_app_folder_path")
-
-3. Python Standalone Script (No App)
-
-    Technology: Python 3.x, NumPy, Pandas, Plotly
-
-    Features:
-
-        Command-line script for PAMA method calculations.
-
-        Inputs are defined directly in the script (polymer concentration, molecular weight, viscosities).
-
-        Outputs data tables and saves to carreau_data.txt.
-
-        Generates interactive Plotly plots with:
-
-            Viscosity curve for undegraded polymer
-
-            Viscosity curve for degraded polymer
-
-        Fully reproducible outside R/Shiny environment.
-
-    Use case: Lightweight, flexible script for batch processing or integration into larger Python workflows.
-
-Run:
-
-pip install numpy pandas plotly
-python pama_method.py
-
-Inputs Explained
-Parameter	Description	Units	Default Example
-concentration	Polymer concentration in solution	g/L	2
-molecular_weight	Polymer molecular weight	MDa	8
-eta7_exp	Experimental viscosity at 7.3 s⁻¹ (undegraded)	cP	15.653
-eta7_exp_D	Experimental viscosity at 7.3 s⁻¹ (degraded)	cP	7.354
-
-
-Output
-
-    Data file: carreau_data.txt containing shear rates and viscosities.
-
-    Plots: Interactive log-log plots showing the rheological curves of HPAM polymers, visualizing the effect of degradation.
-
-Background & References
-
-This method and model are based on polymer rheology theory, Carreau-Yassuda viscosity models, and the specific needs of measuring polymer solutions with limited instrumentation. For further reading, please consult:
-
-    E. Pérez, D. Alviso, E. Manrique, G. Artana, Laboratorio de Fluidodinámica, Facultad de Ingeniería, Universidad de Buenos Aires.
-
-    Relevant rheology textbooks and Carreau-Yassuda modeling papers.
-
-License
-
-MIT License — feel free to use, modify, and distribute!
-Contact
-
-For questions or collaboration, contact:
-
-    E. Pérez: eperez@fi.uba.ar
+1. **Clone this repository**
+   ```bash
+   git clone https://github.com/your-username/pama-streamlit.git
+   cd pama-streamlit
