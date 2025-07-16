@@ -108,5 +108,3 @@ Contact
 For questions or collaboration, contact:
 
     E. Pérez: eperez@fi.uba.ar
-
-    D. Alviso: dalviso@fi.uba.ar
