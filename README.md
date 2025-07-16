@@ -62,8 +62,6 @@ Background & References
 
 This method and model are based on polymer rheology theory, Carreau-Yassuda viscosity models, and the specific needs of measuring polymer solutions with limited instrumentation. For further reading, please consult:
 
-    E. Pérez, D. Alviso, E. Manrique, G. Artana, Laboratorio de Fluidodinámica, Facultad de Ingeniería, Universidad de Buenos Aires.
-
     Pérez, E., Alviso, D., Manrique, E., & Artana, G. (2022). Estimation of the rheological curve of HPAM solutions from measurements using the Brookfield viscometer. Journal of Petroleum Science and Engineering, 216, 110793.
     
     Pérez, E., Alviso, D., Carmona, M., Romero, J., Manrique, E., & Artana, G. (2023, October). Estimation of the concentration of HPAM polymer required to achieve a desired viscosity in EOR projects. In IOR+ 2023 (Vol. 2023, No. 1, pp. 1-10). European Association of Geoscientists & Engineers.
@@ -71,6 +69,8 @@ This method and model are based on polymer rheology theory, Carreau-Yassuda visc
     Pérez, E., Alviso, D., Carmona, M., Manrique, E., & Artana, G. (2024, October). Estimation of the Molecular Weight of HPAM Solutions from Brookfield Viscometer Measurements at 298K. In Third EAGE Workshop on EOR (Vol. 2024, No. 1, pp. 1-6). European Association of Geoscientists & Engineers.
 
     Pérez, E., Alviso, D., Carmona, M., Manrique, E., & Artana, G. (2024). A simple model of the rheological curve of HPAM solutions at different temperatures. Scientific Reports, 14(1), 31601.
+
+    E. Pérez, D. Alviso, E. Manrique, G. Artana, Laboratorio de Fluidodinámica, Facultad de Ingeniería, Universidad de Buenos Aires. https://lfd.fi.uba.ar/
 
     
 
