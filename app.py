@@ -4,14 +4,10 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
 
-# --- PAGE CONFIG ---
-st.set_page_config(
-    page_title="PAMA Rheology Models",
-    page_icon="🧪",
-    layout="wide",
-)
+# Page setup
+st.set_page_config(page_title="PAMA Rheology Models", page_icon="🧪", layout="wide")
 
-# --- SIDEBAR (Parameters and Model Selection) ---
+# Sidebar for controls
 with st.sidebar:
     st.title("PAMA Controls")
     st.markdown("### Navigation")
@@ -29,15 +25,15 @@ with st.sidebar:
 
     model = st.selectbox("Choose Model", ["Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"])
 
-    if 'conc' not in st.session_state:
+    if "conc" not in st.session_state:
         st.session_state.conc = 2.0
-    if 'mw' not in st.session_state:
+    if "mw" not in st.session_state:
         st.session_state.mw = 8.0
-    if 'eta7' not in st.session_state:
+    if "eta7" not in st.session_state:
         st.session_state.eta7 = 20.0
-    if 'temp' not in st.session_state:
+    if "temp" not in st.session_state:
         st.session_state.temp = 35
-    if 'eta7d' not in st.session_state:
+    if "eta7d" not in st.session_state:
         st.session_state.eta7d = 7.354
 
     st.session_state.conc = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
@@ -56,66 +52,59 @@ with st.sidebar:
             data = model_pama_temperature(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.temp)
         elif model == "PAMA with Degradation":
             data = model_pama_degradation(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.eta7d)
-        
         st.session_state.data = data
         st.session_state.model = model
 
-# --- MAIN CONTENT (Graphs and Fancy Stuff) ---
+# Main content
 st.title("PAMA Rheology Models")
 st.markdown("### Visualize Polymer Behavior")
 st.markdown("Explore detailed rheology insights with interactive plots and data.")
 
 with st.container():
-    if 'data' in st.session_state and 'model' in st.session_state:
+    if "data" in st.session_state and "model" in st.session_state:
         data = st.session_state.data
         model = st.session_state.model
 
-        # --- CHART ---
+        # Chart setup
         traces = []
         columns = []
         if model == "Basic PAMA":
-            traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers", line=dict(color="#1e90ff")))
+            traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], mode="lines+markers", line=dict(color="#1e90ff")))
             columns = ["shear", "Viscosity (cP)"]
         elif model == "PAMA with Temperature":
-            traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers", line=dict(color="#1e90ff")))
-            traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers", line=dict(color="#4169e1")))
+            traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], mode="lines+markers", line=dict(color="#1e90ff")))
+            traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], mode="lines+markers", line=dict(color="#4169e1")))
             columns = ["shear", "25°C Reference", list(data.keys())[2]]
         elif model == "PAMA with Degradation":
-            traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers", line=dict(color="#1e90ff")))
-            traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers", line=dict(color="#ff4500")))
+            traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], mode="lines+markers", line=dict(color="#1e90ff")))
+            traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], mode="lines+markers", line=dict(color="#ff4500")))
             columns = ["shear", "Polymer UD", "Polymer Degraded"]
 
-        fig = go.Figure(
-            data=traces,
-            layout=go.Layout(
-                title=f"{model} Analysis",
-                xaxis={"title": "Shear Rate (s⁻¹)", "type": "log", "gridcolor": "#e0e0e0"},
-                yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "#e0e0e0"},
-                template="plotly_white",
-                legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5"},
-                margin={"t": 60, "b": 50, "l": 50, "r": 50"},
-                plot_bgcolor="#f9f9f9",
-                paper_bgcolor="#f9f9f9",
-                hovermode="x unified"
-            )
+        fig = go.Figure(data=traces)
+        fig.update_layout(
+            title=model + " Analysis",
+            xaxis_title="Shear Rate (s⁻¹)",
+            yaxis_title="Viscosity (cP)",
+            xaxis_type="log",
+            yaxis_type="log",
+            template="plotly_white"
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # --- TABLE ---
+        # Table
         df = pd.DataFrame({col: data[col] for col in columns})
         st.table(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid #e0e0e0'}))
 
-        # --- DOWNLOAD BUTTON ---
+        # Download
         csv = df.to_csv(index=False)
         st.download_button(
             label="Download Data",
             data=csv,
             file_name=f"{model.replace(' ', '_').lower()}_data.csv",
-            mime="text/csv",
-            help="Export the current data as a CSV file"
+            mime="text/csv"
         )
 
-# --- MODEL IMPLEMENTATIONS ---
+# Model functions
 def model_basic_pama(C, MW, eta7_exp):
     Temp = 298
     eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
