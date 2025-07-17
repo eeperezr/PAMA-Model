@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
 
-# --- Model functions (unchanged, from your original code) ---
+# --- Model functions (same as before) ---
 def model_basic_pama(C, MW, eta7_exp):
     Temp = 298
     eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
@@ -99,99 +99,170 @@ def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
     etaC_D = eta_in + (eta_0C_D - eta_in) * (1 + (lC_D * shear)**2)**((nC_D - 1) / 2)
     return {"shear": shear.tolist(), "Polymer UD": etaC.tolist(), "Polymer Degraded": etaC_D.tolist()}
 
-# --- Start of UI setup ---
-
-# Page config
+# --- UI Setup ---
 st.set_page_config(page_title="PAMA Rheology Models", page_icon="🧪", layout="wide")
 
-# Inject CSS for background, fonts, sidebar, and header styling
+# Custom CSS for modern UI
 st.markdown("""
 <style>
-    /* Background color */
-    .reportview-container, .main {
-        background: #f5f7fa;
-    }
-
-    /* Sidebar background */
-    .sidebar .sidebar-content {
-        background: #dff9fb;
-        color: #0a3d62;
+    /* Background Gradient */
+    .main > div {
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+        min-height: 100vh;
+        padding: 1rem 2rem 3rem 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     /* Title styling */
     .title {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 48px;
-        font-weight: 700;
-        color: #0a3d62;
+        font-size: 3.5rem;
+        font-weight: 900;
+        background: linear-gradient(90deg, #3366ff, #00ccff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+        letter-spacing: 0.1rem;
         text-align: center;
-        margin-bottom: 0;
-        margin-top: 15px;
     }
     .subtitle {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 20px;
-        color: #3c6382;
+        font-size: 1.2rem;
+        color: #334e68;
         text-align: center;
-        margin-top: 5px;
-        margin-bottom: 40px;
+        margin-bottom: 2rem;
+        font-weight: 600;
     }
 
-    /* Style buttons */
-    div.stButton > button {
-        background-color: #0a3d62;
-        color: white;
-        font-weight: 600;
-        border-radius: 8px;
-        padding: 8px 20px;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        border: none;
+    /* Columns container */
+    .css-1d391kg {
+        gap: 2rem !important;
     }
-    div.stButton > button:hover {
-        background-color: #07406a;
+
+    /* Left and right panels as cards */
+    .left-panel, .right-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    /* Scrollbar for overflow */
+    .left-panel::-webkit-scrollbar, .right-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+    .left-panel::-webkit-scrollbar-thumb, .right-panel::-webkit-scrollbar-thumb {
+        background: #3366ff;
+        border-radius: 3px;
+    }
+
+    /* Headings inside panels */
+    .left-panel h3, .right-panel h3 {
+        font-weight: 700;
+        color: #1b263b;
+        border-bottom: 2px solid #00ccff;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1.2rem;
+        letter-spacing: 0.05rem;
+    }
+
+    /* Images styling */
+    .left-panel img {
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        margin-bottom: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+    .left-panel img:hover {
+        transform: scale(1.05);
+    }
+
+    /* Input fields style */
+    input[type="number"] {
+        border-radius: 10px !important;
+        border: 1.8px solid #00ccff !important;
+        padding: 8px 12px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        color: #1b263b !important;
+    }
+
+    /* Multiselect container */
+    div[data-baseweb="select"] > div {
+        border-radius: 10px !important;
+        border: 1.8px solid #00ccff !important;
+    }
+
+    /* Button styling */
+    div.stButton > button {
+        background: linear-gradient(90deg, #3366ff, #00ccff);
+        border: none;
+        padding: 12px 28px;
+        border-radius: 25px;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: box-shadow 0.3s ease;
+        margin-top: 1.5rem;
+        width: 100%;
         cursor: pointer;
     }
-
-    /* Center the download button */
-    .download-button {
-        text-align: center;
-        margin-top: 15px;
+    div.stButton > button:hover {
+        box-shadow: 0 0 15px 3px #00ccff;
     }
+
+    /* Dataframe scroll */
+    .element-container .dataframe-container {
+        max-height: 350px !important;
+        overflow-y: auto !important;
+        border-radius: 15px;
+        border: 1px solid #00ccff;
+    }
+
+    /* Download button container */
+    .download-button {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    /* Plotly chart container */
+    .stPlotlyChart {
+        border-radius: 15px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        background: white;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
-# Title and subtitle
-st.markdown("""
-    <h1 class="title">PAMA Rheology Models</h1>
-    <p class="subtitle">Explore polymer viscosity behavior with interactive multi-model comparisons</p>
-""", unsafe_allow_html=True)
+# Title + subtitle with style
+st.markdown('<h1 class="title">PAMA Rheology Models</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Interactive comparison of polymer viscosity models with modern UI</p>', unsafe_allow_html=True)
 
-# Main layout with two columns: left for screenshots, right for controls + plots
-col_left, col_right = st.columns([1, 2])  # Adjust widths as needed
+# Layout with custom containers for scroll + card look
+col1, col2 = st.columns([1, 2])
 
-with col_left:
+with col1:
+    st.markdown('<div class="left-panel">', unsafe_allow_html=True)
     st.markdown("### Example Graphs")
     st.image("https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?auto=format&fit=crop&w=400&q=60", caption="Model 1 - Viscosity Curve", use_column_width=True)
     st.image("https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=60", caption="Model 2 - Temperature Effect", use_column_width=True)
     st.image("https://images.unsplash.com/photo-1530023367847-0e4f16c69c14?auto=format&fit=crop&w=400&q=60", caption="Model 3 - Polymer Degradation", use_column_width=True)
 
-with col_right:
-    st.markdown("### Select Models to Compare")
+    st.markdown("### Model & Parameters")
 
-    # Multi-select model choice
     models_selected = st.multiselect(
         "Choose one or more models",
         options=["Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"],
         default=["Basic PAMA"]
     )
 
-    # Shared parameter inputs
     conc = st.number_input("Concentration (g/L)", min_value=0.1, max_value=20.0, value=2.0, step=0.1, format="%.3f")
     mw = st.number_input("Molecular Weight (MDa)", min_value=0.1, max_value=50.0, value=8.0, step=0.1, format="%.3f")
     eta7 = st.number_input("η@7.3 (cP)", min_value=0.01, value=20.0, format="%.3f")
 
-    # Model-specific inputs:
     temp = 35
     eta7d = 7.354
     if "PAMA with Temperature" in models_selected:
@@ -199,10 +270,11 @@ with col_right:
     if "PAMA with Degradation" in models_selected:
         eta7d = st.number_input("η@7.3 (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
 
-    # Run button
     run = st.button("Run Models")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Run models and plot results
+with col2:
+    st.markdown('<div class="right-panel">', unsafe_allow_html=True)
     if run and models_selected:
         fig = go.Figure()
         combined_df = pd.DataFrame()
@@ -210,32 +282,27 @@ with col_right:
         for model_name in models_selected:
             if model_name == "Basic PAMA":
                 data = model_basic_pama(conc, mw, eta7)
-                # Plot Basic PAMA curve
-                fig.add_trace(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], mode="lines", name="Basic PAMA", line=dict(color="#1e90ff")))
+                fig.add_trace(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], mode="lines", name="Basic PAMA", line=dict(color="#1e90ff", width=3)))
                 df_tmp = pd.DataFrame({"shear": data["shear"], "Basic PAMA": data["Viscosity (cP)"]})
             elif model_name == "PAMA with Temperature":
                 data = model_pama_temperature(conc, mw, eta7, temp)
-                # Plot both reference and temp curves
-                fig.add_trace(go.Scatter(x=data["shear"], y=data["25°C Reference"], mode="lines", name="25°C Reference", line=dict(color="#2e86de")))
-                # Find the other temp key dynamically
+                fig.add_trace(go.Scatter(x=data["shear"], y=data["25°C Reference"], mode="lines", name="25°C Reference", line=dict(color="#2e86de", dash='dash', width=3)))
                 other_key = [k for k in data.keys() if k not in ("shear", "25°C Reference")][0]
-                fig.add_trace(go.Scatter(x=data["shear"], y=data[other_key], mode="lines", name=f"{temp}°C Model", line=dict(color="#1e3799")))
+                fig.add_trace(go.Scatter(x=data["shear"], y=data[other_key], mode="lines", name=f"{temp}°C Model", line=dict(color="#1e3799", width=3)))
                 df_tmp = pd.DataFrame({"shear": data["shear"], "25°C Reference": data["25°C Reference"], f"{temp}°C Model": data[other_key]})
             elif model_name == "PAMA with Degradation":
                 data = model_pama_degradation(conc, mw, eta7, eta7d)
-                fig.add_trace(go.Scatter(x=data["shear"], y=data["Polymer UD"], mode="lines", name="Polymer UD", line=dict(color="#1e90ff")))
-                fig.add_trace(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], mode="lines", name="Polymer Degraded", line=dict(color="#ff4500")))
+                fig.add_trace(go.Scatter(x=data["shear"], y=data["Polymer UD"], mode="lines", name="Polymer UD", line=dict(color="#1e90ff", width=3)))
+                fig.add_trace(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], mode="lines", name="Polymer Degraded", line=dict(color="#ff4500", width=3)))
                 df_tmp = pd.DataFrame({"shear": data["shear"], "Polymer UD": data["Polymer UD"], "Polymer Degraded": data["Polymer Degraded"]})
             else:
                 continue
 
-            # Merge dfs on shear for combined table (outer join on shear)
             if combined_df.empty:
                 combined_df = df_tmp
             else:
                 combined_df = pd.merge(combined_df, df_tmp, on="shear", how="outer")
 
-        # Final plot layout
         fig.update_layout(
             title="PAMA Models Comparison",
             xaxis_title="Shear Rate (s⁻¹)",
@@ -243,39 +310,23 @@ with col_right:
             xaxis_type="log",
             yaxis_type="log",
             template="plotly_white",
-            legend=dict(title="Models", x=0.8, y=0.95)
+            legend=dict(title="Models", x=0.8, y=0.95),
+            margin=dict(t=50, r=20, b=40, l=60)
         )
 
         st.plotly_chart(fig, use_container_width=True)
 
-        # Show combined data table with centered text and borders
         st.markdown("### Combined Data Table")
         st.dataframe(combined_df.style.set_properties(**{'text-align': 'center', 'border': '1px solid #e0e0e0'}))
 
-        # CSV download button for combined data
         csv = combined_df.to_csv(index=False)
         st.download_button(
             label="Download Combined Data as CSV",
             data=csv,
             file_name="pama_models_comparison.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key="download-csv"
         )
     elif not run:
         st.info("Select one or more models and click 'Run Models' to see the results here.")
-
-# Sidebar content
-with st.sidebar:
-    st.title("PAMA Controls")
-    st.markdown("""
-    ### Navigation
-    - [Documentation](#)
-      - Overview
-      - Setup
-      - Manual
-      - Developers
-      - Contributors
-      - Changelog
-    - [Source Code](https://example.com)
-    - Created by: Eduar Perez (University of Buenos Aires)
-    """)
-
+    st.markdown('</div>', unsafe_allow_html=True)
