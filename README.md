@@ -9,8 +9,7 @@ A Streamlit web application for simulating polymer viscosity behavior using the 
 
 ## 🔗 Live App
 
-> 🚀 [Try it Live on Streamlit Cloud](https://your-app-url.streamlit.app)  
-*(http://localhost:8501/)*
+> 🚀 [Try it Live on Streamlit Cloud](http://localhost:8501/)  
 
 ---
 
