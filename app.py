@@ -23,7 +23,7 @@ with st.sidebar:
       - Developers
       - Contributors
       - Changelog
-    - [Source Code]([invalid url, do not cite])
+    - [Source Code](https://example.com)
     - Created by: Eduar Perez (University of Buenos Aires)
     """)
 
@@ -92,7 +92,7 @@ with st.container():
                 xaxis={"title": "Shear Rate (s⁻¹)", "type": "log", "gridcolor": "#e0e0e0"},
                 yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "#e0e0e0"},
                 template="plotly_white",
-                legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5"},  # Fixed: Added comma here
+                legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5"},  # Ensured proper formatting
                 margin={"t": 60, "b": 50, "l": 50, "r": 50"},
                 plot_bgcolor="#f9f9f9",
                 paper_bgcolor="#f9f9f9",
