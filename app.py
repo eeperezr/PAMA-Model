@@ -9,35 +9,53 @@ st.set_page_config(
     page_title="PAMA Rheology Models",
     page_icon="🧪",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",  # Collapse sidebar by default
 )
 
-# --- CUSTOM CSS for WHITE THEME ---
+# --- CUSTOM CSS for RepTate-like UI ---
 st.markdown(
     """
     <style>
     body {
         background-color: #ffffff;
         color: #222222;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Arial', sans-serif;
     }
-    /* Sidebar styling */
+    /* Sidebar styling (Table of Contents) */
     .css-1d391kg {
-        background-color: #fafafa !important;
-        border-right: 1px solid #ddd;
+        width: 200px;
+        background-color: #f0f0f0;
+        border-right: 1px solid #ccc;
+        padding: 10px;
+        position: fixed;
+        top: 60px;
+        bottom: 0;
+        overflow-y: auto;
+    }
+    /* Header styling */
+    .css-1aumxhk {
+        background-color: #1e90ff;
+        color: white;
+        padding: 10px;
+        text-align: center;
+    }
+    /* Main content area */
+    .block-container {
+        margin-left: 220px;
+        padding: 20px;
     }
     /* Buttons styling */
     .stButton>button {
-        background-color: #0a84ff;
+        background-color: #1e90ff;
         color: white;
         font-weight: 600;
-        padding: 0.6rem 1.5rem;
-        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
         border: none;
         transition: background-color 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #006fd6;
+        background-color: #104e8b;
         cursor: pointer;
     }
     /* Headers styling */
@@ -49,26 +67,36 @@ st.markdown(
         padding: 0.5rem 0.8rem;
         text-align: center;
     }
-    .block-container {
-        padding: 2rem 3rem 3rem 3rem;
-    }
     /* Plotly chart container */
     .stPlotlyChart > div {
-        border-radius: 12px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- APP HEADER ---
-st.title("🧪 PAMA Rheology Modeling App")
-st.markdown(
-    "<p style='font-size:18px; color:#444;'>Explore polymer rheology models with interactive parameters and visualizations.</p>",
-    unsafe_allow_html=True,
-)
-st.markdown("---")
+# --- HEADER ---
+st.markdown("<h1 style='background-color: #1e90ff; color: white; padding: 10px; text-align: center;'>PAMA Rheology Modeling App 🧪</h1>", unsafe_allow_html=True)
+st.markdown("<p style='font-size: 16px; color: #444; text-align: center;'>Tool for analyzing polymer rheology models with interactive visualizations.</p>", unsafe_allow_html=True)
+
+# --- SIDEBAR (Table of Contents) ---
+with st.sidebar:
+    st.markdown("<h3>Table of Contents</h3>", unsafe_allow_html=True)
+    st.markdown("<ul><li><a href='#'>PAMA Documentation</a></li>", unsafe_allow_html=True)
+    st.markdown("<ul><li><a href='#'>Contents</a></li>", unsafe_allow_html=True)
+    st.markdown("<ul><li><a href='#'>About PAMA</a></li>", unsafe_allow_html=True)
+    st.markdown("<li><a href='#'>Installation</a></li>", unsafe_allow_html=True)
+    st.markdown("<li><a href='#'>User Manual</a></li>", unsafe_allow_html=True)
+    st.markdown("<li><a href='#'>PAMA for Developers</a></li>", unsafe_allow_helper=True)
+    st.markdown("<li><a href='#'>PAMA Contributors</a></li>", unsafe_allow_html=True)
+    st.markdown("<li><a href='#'>Version History</a></li></ul>", unsafe_allow_html=True)
+    st.markdown("<p>More Info:</p>", unsafe_allow_html=True)
+    st.markdown("<ul><li><a href='https://example.com'>Source Code</a></li></ul>", unsafe_allow_html=True)
+    st.markdown("<p>Authors:</p>", unsafe_allow_html=True)
+    st.markdown("<ul><li>Jorge Ramirez (jorge.ramirez@upm.es)</li>", unsafe_allow_html=True)
+    st.markdown("<li>Victor Boudara (victor.bc@gmail.com)</li></ul>", unsafe_allow_html=True)
 
 # --- HELPER: PLOT FUNCTION ---
 def make_plot(df, title, ycols, labels):
@@ -96,9 +124,8 @@ def make_plot(df, title, ycols, labels):
     return fig
 
 # --- MODEL IMPLEMENTATIONS ---
-# Model 1: Basic PAMA
 def model_basic_pama(C, MW, eta7_exp):
-    Temp = 298  # 25°C in Kelvin
+    Temp = 298
     eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
     
     ceta = np.arange(0.1, 100.1, 0.1)
@@ -125,10 +152,9 @@ def model_basic_pama(C, MW, eta7_exp):
 
     return pd.DataFrame({"shear": shear, "Viscosity (cP)": etaC})
 
-# Model 2: PAMA with Temperature
 def model_pama_temperature(C, MW, eta7_exp, T_wanted_C):
-    Temp = 298  # Reference temp 25°C in Kelvin
-    T_wanted = T_wanted_C + 273  # Convert to Kelvin
+    Temp = 298
+    T_wanted = T_wanted_C + 273
     eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
     eta_in_T = np.exp(-3.7188 + (578.919 / (-137.546 + T_wanted)))
 
@@ -159,10 +185,9 @@ def model_pama_temperature(C, MW, eta7_exp, T_wanted_C):
 
     return pd.DataFrame({"shear": shear, "25°C Reference": etaC_ref, f"{T_wanted_C}°C Model": etaC_temp})
 
-# Model 3: PAMA with Degradation
 def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
     alpha = 0.763
-    Temp = 298  # 25°C in Kelvin
+    Temp = 298
     eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
 
     c_med = C * 0.5
@@ -209,89 +234,94 @@ def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
 
     return pd.DataFrame({"shear": shear, "Polymer UD": etaC, "Polymer Degraded": etaC_D})
 
-# --- SIDEBAR for MODEL SELECTION and PARAMETERS ---
-st.sidebar.header("Model Selection and Parameters")
-model_choice = st.sidebar.radio("Select Model", ("Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"))
-
 # --- MAIN CONTENT ---
+st.markdown("<h2>PAMA Rheology Models</h2>", unsafe_allow_html=True)
+st.markdown("<p>PAMA (Polymer Analysis and Modeling Application) is a tool for analyzing polymer rheology models with interactive visualizations.</p>", unsafe_allow_html=True)
+
+# Model selection and parameters
+model_choice = st.selectbox("Select Model", ("Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"))
+
 if model_choice == "Basic PAMA":
-    st.header("Basic PAMA Model")
-    st.markdown("Input parameters to calculate viscosity using the basic PAMA model.")
-    C = st.sidebar.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="C_basic")
-    MW = st.sidebar.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="MW_basic")
-    eta7_exp = st.sidebar.number_input("η@7.3 experimental (cP)", min_value=0.01, value=20.0, format="%.3f", key="eta7_basic")
-    
-    if st.sidebar.button("Run Basic Model", key="btn_basic"):
-        df_basic = model_basic_pama(C, MW, eta7_exp)
-        st.plotly_chart(
-            make_plot(df_basic, "Basic PAMA Viscosity vs Shear Rate", ["Viscosity (cP)"], ["Viscosity"]),
-            use_container_width=True,
-        )
-        st.dataframe(df_basic.style.format("{:.3f}"))
-        st.download_button(
-            label="Download Data (CSV)",
-            data=df_basic.to_csv(index=False),
-            file_name="basic_pama.csv",
-            mime="text/csv",
-        )
+    st.markdown("<h3>Basic PAMA Model</h3>", unsafe_allow_html=True)
+    st.markdown("<p>Input parameters to calculate viscosity using the basic PAMA model.</p>", unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        C = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
+        MW = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
+        eta7_exp = st.number_input("η@7.3 experimental (cP)", min_value=0.01, value=20.0, format="%.3f")
+        if st.button("Run Basic Model"):
+            df_basic = model_basic_pama(C, MW, eta7_exp)
+            with col2:
+                st.plotly_chart(
+                    make_plot(df_basic, "Basic PAMA Viscosity vs Shear Rate", ["Viscosity (cP)"], ["Viscosity"]),
+                    use_container_width=True,
+                )
+                st.dataframe(df_basic.style.format("{:.3f}"))
+                st.download_button(
+                    label="Download Data (CSV)",
+                    data=df_basic.to_csv(index=False),
+                    file_name="basic_pama.csv",
+                    mime="text/csv",
+                )
 
 elif model_choice == "PAMA with Temperature":
-    st.header("PAMA with Temperature Effects")
-    st.markdown("Explore how temperature influences viscosity in the PAMA model.")
-    C = st.sidebar.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="C_temp")
-    MW = st.sidebar.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="MW_temp")
-    eta7_exp = st.sidebar.number_input("η@7.3 experimental at 25°C (cP)", min_value=0.01, value=15.653, format="%.3f", key="eta7_temp")
-    T_wanted_C = st.sidebar.slider("Target Temperature (°C)", 0, 100, 35, 1, key="T_temp")
-    
-    if st.sidebar.button("Run Temperature Model", key="btn_temp"):
-        df_temp = model_pama_temperature(C, MW, eta7_exp, T_wanted_C)
-        st.plotly_chart(
-            make_plot(
-                df_temp,
-                "PAMA Temperature Model Viscosity",
-                ["25°C Reference", f"{T_wanted_C}°C Model"],
-                ["25°C", f"{T_wanted_C}°C"],
-            ),
-            use_container_width=True,
-        )
-        st.dataframe(df_temp.style.format("{:.3f}"))
-        st.download_button(
-            label="Download Data (CSV)",
-            data=df_temp.to_csv(index=False),
-            file_name="pama_temperature.csv",
-            mime="text/csv",
-        )
+    st.markdown("<h3>PAMA with Temperature Effects</h3>", unsafe_allow_html=True)
+    st.markdown("<p>Explore how temperature influences viscosity in the PAMA model.</p>", unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        C = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
+        MW = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
+        eta7_exp = st.number_input("η@7.3 experimental at 25°C (cP)", min_value=0.01, value=15.653, format="%.3f")
+        T_wanted_C = st.slider("Target Temperature (°C)", 0, 100, 35, 1)
+        if st.button("Run Temperature Model"):
+            df_temp = model_pama_temperature(C, MW, eta7_exp, T_wanted_C)
+            with col2:
+                st.plotly_chart(
+                    make_plot(
+                        df_temp,
+                        "PAMA Temperature Model Viscosity",
+                        ["25°C Reference", f"{T_wanted_C}°C Model"],
+                        ["25°C", f"{T_wanted_C}°C"],
+                    ),
+                    use_container_width=True,
+                )
+                st.dataframe(df_temp.style.format("{:.3f}"))
+                st.download_button(
+                    label="Download Data (CSV)",
+                    data=df_temp.to_csv(index=False),
+                    file_name="pama_temperature.csv",
+                    mime="text/csv",
+                )
 
 else:
-    st.header("PAMA with Degradation Effects")
-    st.markdown("Compare viscosity before and after polymer degradation.")
-    C = st.sidebar.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="C_deg")
-    MW = st.sidebar.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="MW_deg")
-    eta7_exp = st.sidebar.number_input("η@7.3 experimental (Polymer UD) (cP)", min_value=0.01, value=15.653, format="%.3f", key="eta7_deg")
-    eta7_exp_D = st.sidebar.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f", key="eta7_deg_D")
-    
-    if st.sidebar.button("Run Degradation Model", key="btn_deg"):
-        df_deg = model_pama_degradation(C, MW, eta7_exp, eta7_exp_D)
-        st.plotly_chart(
-            make_plot(
-                df_deg,
-                "PAMA Degradation Model Viscosity",
-                ["Polymer UD", "Polymer Degraded"],
-                ["Polymer UD", "Degraded"],
-            ),
-            use_container_width=True,
-        )
-        st.dataframe(df_deg.style.format("{:.3f}"))
-        st.download_button(
-            label="Download Data (CSV)",
-            data=df_deg.to_csv(index=False),
-            file_name="pama_degradation.csv",
-            mime="text/csv",
-        )
+    st.markdown("<h3>PAMA with Degradation Effects</h3>", unsafe_allow_html=True)
+    st.markdown("<p>Compare viscosity before and after polymer degradation.</p>", unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        C = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
+        MW = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
+        eta7_exp = st.number_input("η@7.3 experimental (Polymer UD) (cP)", min_value=0.01, value=15.653, format="%.3f")
+        eta7_exp_D = st.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
+        if st.button("Run Degradation Model"):
+            df_deg = model_pama_degradation(C, MW, eta7_exp, eta7_exp_D)
+            with col2:
+                st.plotly_chart(
+                    make_plot(
+                        df_deg,
+                        "PAMA Degradation Model Viscosity",
+                        ["Polymer UD", "Polymer Degraded"],
+                        ["Polymer UD", "Degraded"],
+                    ),
+                    use_container_width=True,
+                )
+                st.dataframe(df_deg.style.format("{:.3f}"))
+                st.download_button(
+                    label="Download Data (CSV)",
+                    data=df_deg.to_csv(index=False),
+                    file_name="pama_degradation.csv",
+                    mime="text/csv",
+                )
 
 # --- FOOTER ---
-st.markdown("---")
-st.markdown(
-    "<p style='text-align:center; color:#666;'>Made by Eduar — Powered by Streamlit & Plotly</p>",
-    unsafe_allow_html=True,
-)
+st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #666;'>Made by Eduar — Powered by Streamlit & Plotly</p>", unsafe_allow_html=True)
