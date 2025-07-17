@@ -93,7 +93,7 @@ with st.container():
                 yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "#e0e0e0"},
                 template="plotly_white",
                 legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5"},
-                margin={"t": 60, "b": 50, "l": 50, "r": 50},
+                margin={"t": 60, "b": 50, "l": 50, "r": 50"},
                 plot_bgcolor="#f9f9f9",
                 paper_bgcolor="#f9f9f9",
                 hovermode="x unified"
