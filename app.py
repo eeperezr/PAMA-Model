@@ -4,138 +4,158 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy.interpolate import interp1d
 
-st.set_page_config(page_title="PAMA Method Models", layout="wide")
+st.set_page_config(page_title="PAMA Models", layout="centered")
+st.title("🧪 PAMA Method: Rheology Models")
 
-st.title("PAMA Method – Rheological Models")
-st.markdown("""
-This app simulates and visualizes **3 different rheological models** for HPAM solutions:
-
-1. **Basic Model**
-2. **Model with Temperature Adjustment**
-3. **Model with Polymer Degradation**
-
-Developed from the methodology by *E. Pérez, D. Alviso, E. Manrique, G. Artana*.
-""")
-
-# Select Model
 model_choice = st.sidebar.radio(
-    "Choose a model:",
-    ["1. Basic", "2. With Temperature", "3. With Degradation"]
+    "Select Model",
+    ("Model 1: Basic", "Model 2: With Temperature", "Model 3: With Degradation")
 )
 
-# Shared Inputs
-C = st.sidebar.number_input("Concentration (g/L)", value=2.0)
-MW = st.sidebar.number_input("Molecular Weight (MDa)", value=8.0)
-eta7_exp = st.sidebar.number_input("Experimental η @ 7.3 s⁻¹ (cP)", value=20.0)
+# ========= Model 1 =========
+def model_basic_pama(C, MW, eta7_exp):
+    Temp = 298
+    eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
 
-if model_choice == "3. With Degradation":
-    eta7_exp_D = st.sidebar.number_input("Degraded ηD @ 7.3 s⁻¹ (cP)", value=10.0)
-
-# Constants
-Temp = 298
-eta_in = np.exp((-3.7188 + (578.919 / (-137.546 + Temp)) + (0.0608 * (0 + 0) ** 1.3533)))
-shear = np.concatenate((np.arange(0.01, 1, 0.01), np.arange(1, 10000, 1)))
-
-# === Model Calculations ===
-
-def base_model():
-    ceta = np.arange(0.1, 100, 0.1)
+    ceta = np.arange(0.1, 100.1, 0.1)
     eta_0 = 1 + ceta + 0.582 * ceta**2.009 + 0.022 * ceta**4
-    parc = -0.08212 * ceta
-    n = 1 - (0.6187 - 0.5203 * np.exp(parc))
-    parc2 = (n - 1) / 2
+    n = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta))
     l_d = 0.251 + 1.54 * MW * ceta / (C * Temp)
     l = l_d * (0.810 + 0.0230 * ceta**2.438)
-    eta7 = 1 + (eta_0 - 1) * (1 + (l * 7.3))**parc2
-    interp = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")
-    ceta_exp = interp(eta7_exp)
+    eta7 = 1 + (eta_0 - 1) * (1 + (l * 7.3)**2) ** ((n - 1) / 2)
+
+    ceta_exp = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")(eta7_exp)
+
     eta_0C = 1 + ceta_exp + 0.582 * ceta_exp**2.009 + 0.022 * ceta_exp**4
-    parcC = -0.08212 * ceta_exp
-    nC = 1 - (0.6187 - 0.5203 * np.exp(parcC))
-    parc2C = (nC - 1) / 2
-    l_dC = 0.251 + 1.54 * MW * ceta_exp / (C * Temp)
-    lC = l_dC * (0.810 + 0.0230 * ceta_exp**2.438)
-    etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear)**2)**((nC - 1)/2)
-    return shear, etaC, None
+    nC = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta_exp))
+    lC = (0.251 + 1.54 * MW * ceta_exp / (C * Temp)) * (0.810 + 0.0230 * ceta_exp**2.438)
 
-def model_with_temperature():
-    alpha = 0.763
-    c_med = C * 0.5
-    ceta = np.arange(0.1, 100, 0.1)
-    eta = ceta / c_med
+    shear = np.concatenate([np.arange(0.01, 1, 0.01), np.arange(1, 1000, 1)])
+    etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear)**2) ** ((nC - 1) / 2)
+
+    df = pd.DataFrame({"shear": shear, "viscosity_cP": etaC})
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=shear, y=etaC, mode='lines', name="Viscosity"))
+    fig.update_layout(
+        xaxis=dict(type="log", title="Shear Rate (s⁻¹)"),
+        yaxis=dict(type="log", title="Viscosity (cP)"),
+        title="Model 1: Basic PAMA"
+    )
+    return df, fig
+
+
+# ========= Model 2 =========
+def model_pama_temperature(C, MW, eta7_exp, T_C):
+    T = T_C + 273
+    Temp = 298
+    eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
+
+    ceta = np.arange(0.1, 100.1, 0.1)
     eta_0 = 1 + ceta + 0.582 * ceta**2.009 + 0.022 * ceta**4
-    etab = eta / (2 ** alpha)
-    cetab = etab * c_med
-    eta_0_FD = 1 + cetab + 0.582 * cetab**2.009 + 0.022 * cetab**4
-    beta = np.log(eta_0_FD) - np.log(eta_0)
-    parc = -0.08212 * ceta
-    parcb = -0.08212 * cetab
-    n = 1 - (0.6187 - 0.5203 * np.exp(parc))
-    n_FD = 1 - (0.6187 - 0.5203 * np.exp(parcb))
-    gama = (n / n_FD) - 1
-    parc2 = (n - 1) / 2
-    parc2b = (n_FD - 1) / 2
+    n = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta))
     l_d = 0.251 + 1.54 * MW * ceta / (C * Temp)
-    l_db = 0.251 + 1.54 * MW * cetab / (c_med * Temp)
     l = l_d * (0.810 + 0.0230 * ceta**2.438)
-    lb = l_db * (0.810 + 0.0230 * cetab**2.438)
-    omega = np.log(lb) - np.log(l)
-    eta7 = 1 + (eta_0 - 1) * (1 + l * 7.3)**parc2
-    eta7b = 1 + (eta_0_FD - 1) * (1 + lb * 7.3)**parc2b
-    rho = np.log(eta7b) - np.log(eta7)
-    interp = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")
-    ceta_find = interp(eta7_exp)
-    eta_0C = np.exp(interp1d(ceta, np.log(eta_0))(ceta_find))
-    beta_find = interp1d(ceta, beta)(ceta_find)
-    gama_find = interp1d(ceta, gama)(ceta_find)
-    omega_find = interp1d(ceta, omega)(ceta_find)
-    rho_find = interp1d(ceta, rho)(ceta_find)
-    FD = 1.0  # assume temperature-induced shift
-    eta_0_D = np.exp(beta_find * FD) * eta_0C
-    nC = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta_find))
-    n_D = np.exp(gama_find * FD) * nC
-    lC = (0.251 + 1.54 * MW * ceta_find / (C * Temp)) * (0.810 + 0.0230 * ceta_find**2.438)
-    la_D = np.exp(omega_find * FD) * lC
-    etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear)**2)**((nC - 1)/2)
-    etaD = eta_in + (eta_0_D - eta_in) * (1 + (la_D * shear)**2)**((n_D - 1)/2)
-    return shear, etaC, etaD
+    eta7 = 1 + (eta_0 - 1) * (1 + (l * 7.3)**2) ** ((n - 1) / 2)
 
-def model_with_degradation():
-    shear, etaC, etaD = model_with_temperature()
-    FD = np.log(eta7_exp_D / eta7_exp) / np.log(etaD[0] / etaC[0])
-    etaD = etaC * np.exp(FD * np.log(etaD / etaC))
-    return shear, etaC, etaD
+    ceta_exp = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")(eta7_exp)
 
-# Run selected model
-if model_choice == "1. Basic":
-    shear, etaC, _ = base_model()
+    nC = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta_exp))
+    eta_0C = 1 + ceta_exp + 0.582 * ceta_exp**2.009 + 0.022 * ceta_exp**4
+    lC = (0.251 + 1.54 * MW * ceta_exp / (C * Temp)) * (0.810 + 0.0230 * ceta_exp**2.438)
+    shear = np.concatenate([np.arange(0.01, 1, 0.01), np.arange(1, 1000, 1)])
+
+    etaC_25 = eta_in + (eta_0C - eta_in) * (1 + (lC * shear)**2) ** ((nC - 1) / 2)
+    eta_in_T = np.exp(-3.7188 + (578.919 / (-137.546 + T)))
+    eta_0T = eta_in_T * (1 + ceta_exp + 0.582 * ceta_exp**2.009 + 0.022 * ceta_exp**4)
+    lC_T = (0.251 + 1.54 * MW * ceta_exp / (C * T)) * (0.810 + 0.0230 * ceta_exp**2.438)
+    etaC_T = eta_in_T + (eta_0T - eta_in_T) * (1 + (lC_T * shear)**2) ** ((nC - 1) / 2)
+
+    df = pd.DataFrame({"shear": shear, "T25_C": etaC_25, f"T{T_C}_C": etaC_T})
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=shear, y=etaC, mode='lines', name="Viscosity η"))
-elif model_choice == "2. With Temperature":
-    shear, etaC, etaD = model_with_temperature()
+    fig.add_trace(go.Scatter(x=shear, y=etaC_25, name="T = 25°C"))
+    fig.add_trace(go.Scatter(x=shear, y=etaC_T, name=f"T = {T_C}°C"))
+    fig.update_layout(
+        xaxis=dict(type="log", title="Shear Rate (s⁻¹)"),
+        yaxis=dict(type="log", title="Viscosity (cP)"),
+        title="Model 2: Temperature Dependence"
+    )
+    return df, fig
+
+
+# ========= Model 3 =========
+def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
+    alpha = 0.763
+    Temp = 298
+    eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)))
+
+    ceta = np.arange(0.1, 100.1, 0.1)
+    eta_0 = 1 + ceta + 0.582 * ceta**2.009 + 0.022 * ceta**4
+    n = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta))
+    l_d = 0.251 + 1.54 * MW * ceta / (C * Temp)
+    l = l_d * (0.810 + 0.0230 * ceta**2.438)
+    eta7 = 1 + (eta_0 - 1) * (1 + (l * 7.3)**2) ** ((n - 1) / 2)
+
+    ceta_exp = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")(eta7_exp)
+
+    eta_0C = eta_in + ceta_exp + 0.582 * ceta_exp**2.009 + 0.022 * ceta_exp**4
+    nC = 1 - (0.6187 - 0.5203 * np.exp(-0.08212 * ceta_exp))
+    lC = (0.251 + 1.54 * MW * ceta_exp / (C * Temp)) * (0.810 + 0.0230 * ceta_exp**2.438)
+    shear = np.concatenate([np.arange(0.01, 1, 0.01), np.arange(1, 10000, 1)])
+    etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear)**2) ** ((nC - 1) / 2)
+
+    # Degradation coefficients
+    FD = np.log(eta7_exp_D / eta7_exp) / np.log(eta7_exp / eta7_exp_D)
+    eta_0_D = eta_0C * np.exp(-0.1 * FD)
+    n_D = nC * np.exp(-0.05 * FD)
+    l_D = lC * np.exp(-0.1 * FD)
+
+    etaD = eta_in + (eta_0_D - eta_in) * (1 + (l_D * shear)**2) ** ((n_D - 1) / 2)
+
+    df = pd.DataFrame({"shear": shear, "Polymer_UD": etaC, "Polymer_D": etaD, "FD": FD})
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=shear, y=etaC, mode='lines', name="Undegraded"))
-    fig.add_trace(go.Scatter(x=shear, y=etaD, mode='lines', name="Temp. Shifted"))
-elif model_choice == "3. With Degradation":
-    shear, etaC, etaD = model_with_degradation()
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=shear, y=etaC, mode='lines', name="Undegraded"))
-    fig.add_trace(go.Scatter(x=shear, y=etaD, mode='lines', name="Degraded"))
+    fig.add_trace(go.Scatter(x=shear, y=etaC, name="Undegraded"))
+    fig.add_trace(go.Scatter(x=shear, y=etaD, name="Degraded"))
+    fig.update_layout(
+        xaxis=dict(type="log", title="Shear Rate (s⁻¹)"),
+        yaxis=dict(type="log", title="Viscosity (cP)"),
+        title="Model 3: Degradation Effect"
+    )
+    return df, fig
 
-# Plot
-fig.update_layout(
-    title="Carreau-Yasuda Rheological Curve",
-    xaxis=dict(title="Shear Rate (1/s)", type="log"),
-    yaxis=dict(title="Viscosity (cP)", type="log"),
-    template="plotly_white",
-    height=600
-)
-st.plotly_chart(fig, use_container_width=True)
+# ==== UI ====
+if model_choice == "Model 1: Basic":
+    st.subheader("Model 1: Basic PAMA")
+    C = st.number_input("Concentration (g/L)", value=2.0)
+    MW = st.number_input("Molecular Weight (MDa)", value=8.0)
+    eta7_exp = st.number_input("Experimental η@7.3 (cP)", value=20.0)
+    if st.button("Run Model 1"):
+        df, fig = model_basic_pama(C, MW, eta7_exp)
+        st.plotly_chart(fig)
+        st.dataframe(df)
+        st.download_button("Download CSV", df.to_csv(index=False), "model1_basic.csv")
 
-# Download
-df = pd.DataFrame({'shear_rate (1/s)': shear, 'etaC (cP)': etaC})
-if etaD is not None:
-    df['etaD (cP)'] = etaD
+elif model_choice == "Model 2: With Temperature":
+    st.subheader("Model 2: Temperature Dependence")
+    C = st.number_input("Concentration (g/L)", value=2.0)
+    MW = st.number_input("Molecular Weight (MDa)", value=8.0)
+    eta7_exp = st.number_input("Experimental η@7.3 (cP)", value=15.653)
+    T = st.number_input("Target Temperature (°C)", value=35.0)
+    if st.button("Run Model 2"):
+        df, fig = model_pama_temperature(C, MW, eta7_exp, T)
+        st.plotly_chart(fig)
+        st.dataframe(df)
+        st.download_button("Download CSV", df.to_csv(index=False), "model2_temp.csv")
 
-csv = df.to_csv(index=False)
-st.download_button("Download CSV", csv, "pama_model_output.csv")
+elif model_choice == "Model 3: With Degradation":
+    st.subheader("Model 3: Degradation Effect")
+    C = st.number_input("Concentration (g/L)", value=2.0)
+    MW = st.number_input("Molecular Weight (MDa)", value=8.0)
+    eta7_exp = st.number_input("Undegraded η@7.3 (cP)", value=15.653)
+    eta7_exp_D = st.number_input("Degraded ηD@7.3 (cP)", value=7.354)
+    if st.button("Run Model 3"):
+        df, fig = model_pama_degradation(C, MW, eta7_exp, eta7_exp_D)
+        st.plotly_chart(fig)
+        st.dataframe(df)
+        st.download_button("Download CSV", df.to_csv(index=False), "model3_degradation.csv")
