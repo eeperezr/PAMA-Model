@@ -3,7 +3,6 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
-import uuid
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -168,10 +167,11 @@ def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
 
     c_med = C * 0.5
     ceta = np.arange(0.1, 100.1, 0.1)
-    eta_ Ang = eta / (2 ** alpha)
-    cetab = eta * c_med
     eta_0 = 1 + ceta + 0.582 * ceta**2.009 + 0.022 * ceta**4
+    etab = ceta / (2 ** alpha)
+    cetab = etab * c_med
     eta_0_FD = 1 + cetab + 0.582 * cetab**2.009 + 0.022 * cetab**4
+
     parc = -0.08212 * ceta
     parcb = -0.08212 * cetab
     n = 1 - (0.6187 - 0.5203 * np.exp(parc))
