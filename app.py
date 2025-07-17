@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- CSS STYLING (from styles.css, inlined and adjusted for layout) ---
+# --- CSS STYLING (refined for better layout) ---
 st.markdown(
     """
     <style>
@@ -21,94 +21,84 @@ st.markdown(
         font-family: 'Arial', sans-serif;
         margin: 0;
         padding: 0;
-        background-color: #f3f4f6;
-        color: #1f2937;
+        background-color: #f0f2f5;
+        color: #1a1a1a;
     }
     header {
-        background-color: #1e90ff;
+        background: linear-gradient(90deg, #1e90ff, #4169e1);
         color: white;
         text-align: center;
-        padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        width: 100%;
+        padding: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         position: fixed;
         top: 0;
+        width: 100%;
         z-index: 1000;
     }
     #sidebar {
-        width: 20rem;
+        width: 18rem;
         position: fixed;
-        top: 4rem;
+        top: 5rem;
         bottom: 0;
-        background-color: #e5e7eb;
-        padding: 1rem;
-        border-right: 1px solid #d1d5db;
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-right: 1px solid #e0e0e0;
         overflow-y: auto;
-        transition: all 0.3s ease;
+        box-shadow: 2px 0 6px rgba(0,0,0,0.1);
         z-index: 900;
     }
     #content {
-        margin-left: 20rem;
-        padding: 5rem 1.5rem 1.5rem 1.5rem; /* Adjusted padding to account for fixed header */
-        min-height: calc(100vh - 4rem);
+        margin-left: 18rem;
+        padding: 6rem 2rem 2rem 2rem;
+        min-height: calc(100vh - 5rem);
     }
     .model-section {
-        background-color: white;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 1.5rem;
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
     }
-    select, input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        margin-bottom: 0.5rem;
-        outline: none;
-        transition: border-color 0.2s ease;
-    }
-    select:focus, input:focus {
-        border-color: #3b82f6;
-        ring: 2px solid rgba(59,130,246,0.5);
+    .stSelectbox, .stSlider, .stNumberInput {
+        margin-bottom: 1rem;
     }
     button {
         background-color: #1e90ff;
         color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
         border: none;
         cursor: pointer;
-        transition: background-color 0.2s ease;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
     }
     button:hover {
         background-color: #104e8b;
     }
-    #chart {
-        width: 100%;
-        height: 24rem;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    .stPlotlyChart {
+        border-radius: 8px;
+        overflow: hidden;
     }
     table {
         width: 100%;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-top: 1rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 1.5rem;
     }
     th {
-        background-color: #e5e7eb;
-        color: #374151;
-        padding: 0.5rem;
+        background-color: #f0f0f0;
+        color: #333;
+        padding: 0.75rem;
+        text-align: left;
     }
     td {
-        padding: 0.5rem;
-        border-top: 1px solid #d1d5db;
+        padding: 0.75rem;
+        border-top: 1px solid #e0e0e0;
     }
-    h1, h2, h3 {
-        color: #1f2937;
+    h1, h2 {
+        color: #1a1a1a;
+        font-weight: 600;
     }
     ul {
         list-style-type: disc;
@@ -116,9 +106,11 @@ st.markdown(
     }
     a {
         color: #1e90ff;
+        text-decoration: none;
     }
     a:hover {
         color: #104e8b;
+        text-decoration: underline;
     }
     </style>
     """,
@@ -126,36 +118,33 @@ st.markdown(
 )
 
 # --- HEADER ---
-st.markdown("<header><h1>PAMA Rheology Modeling App 🧪</h1><p>Tool for analyzing polymer rheology models with interactive visualizations.</p></header>", unsafe_allow_html=True)
+st.markdown("<header><h1>PAMA Rheology Modeling App 🧪</h1><p>Explore polymer rheology with stunning visualizations.</p></header>", unsafe_allow_html=True)
 
 # --- SIDEBAR (Parameters and Model Selection) ---
 with st.sidebar:
     st.markdown("<div id='sidebar'>", unsafe_allow_html=True)
-    st.markdown("<h3>Table of Contents</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>Navigation</h3>", unsafe_allow_html=True)
     st.markdown("""
         <ul>
-            <li><a href="#">PAMA Documentation</a></li>
-            <ul>
-                <li><a href="#">Contents</a></li>
-                <li><a href="#">About PAMA</a></li>
-                <li><a href="#">Installation</a></li>
-                <li><a href="#">User Manual</a></li>
-                <li><a href="#">PAMA for Developers</a></li>
-                <li><a href="#">PAMA Contributors</a></li>
-                <li><a href="#">Version History</a></li>
-            </ul>
-        </ul>
-        <p>More Info:</p>
-        <ul>
+            <li><a href="#">Documentation</a>
+                <ul>
+                    <li><a href="#">Overview</a></li>
+                    <li><a href="#">Setup</a></li>
+                    <li><a href="#">Manual</a></li>
+                    <li><a href="#">Developers</a></li>
+                    <li><a href="#">Contributors</a></li>
+                    <li><a href="#">Changelog</a></li>
+                </ul>
+            </li>
             <li><a href="https://example.com">Source Code</a></li>
         </ul>
-        <p>Authors:</p>
+        <p>Created by:</p>
         <ul>
             <li>Eduar Perez (University of Buenos Aires)</li>
         </ul>
     """, unsafe_allow_html=True)
 
-    model = st.selectbox("Select Model", ["basic", "temperature", "degradation"])
+    model = st.selectbox("Choose Model", ["Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"], key="model_select")
 
     if 'conc' not in st.session_state:
         st.session_state.conc = 2.0
@@ -168,21 +157,21 @@ with st.sidebar:
     if 'eta7d' not in st.session_state:
         st.session_state.eta7d = 7.354
 
-    st.session_state.conc = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
-    st.session_state.mw = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
-    st.session_state.eta7 = st.number_input("η@7.3 experimental (cP)", min_value=0.01, value=20.0, format="%.3f")
+    st.session_state.conc = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="conc_slider")
+    st.session_state.mw = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="mw_slider")
+    st.session_state.eta7 = st.number_input("η@7.3 (cP)", min_value=0.01, value=20.0, format="%.3f", key="eta7_input")
 
-    if model == "temperature":
-        st.session_state.temp = st.slider("Target Temperature (°C)", 0, 100, 35, 1)
-    elif model == "degradation":
-        st.session_state.eta7d = st.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
+    if model == "PAMA with Temperature":
+        st.session_state.temp = st.slider("Temperature (°C)", 0, 100, 35, 1, key="temp_slider")
+    elif model == "PAMA with Degradation":
+        st.session_state.eta7d = st.number_input("η@7.3 (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f", key="eta7d_input")
 
-    if st.button(f"Run {model.capitalize()} Model"):
-        if model == "basic":
+    if st.button("Run Model", key="run_button"):
+        if model == "Basic PAMA":
             data = model_basic_pama(st.session_state.conc, st.session_state.mw, st.session_state.eta7)
-        elif model == "temperature":
+        elif model == "PAMA with Temperature":
             data = model_pama_temperature(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.temp)
-        elif model == "degradation":
+        elif model == "PAMA with Degradation":
             data = model_pama_degradation(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.eta7d)
         
         st.session_state.data = data
@@ -192,8 +181,8 @@ with st.sidebar:
 
 # --- CONTENT AREA (Graphs and Fancy Stuff) ---
 st.markdown("<div id='content'>", unsafe_allow_html=True)
-st.markdown("<h2>PAMA Rheology Models</h2>", unsafe_allow_html=True)
-st.markdown("<p>PAMA (Polymer Analysis and Modeling Application) is a tool for analyzing polymer rheology models with interactive visualizations.</p>", unsafe_allow_html=True)
+st.markdown("<h2>Rheology Insights</h2>", unsafe_allow_html=True)
+st.markdown("<p>Visualize and analyze polymer behavior with precision.</p>", unsafe_allow_html=True)
 st.markdown("<div class='model-section'>", unsafe_allow_html=True)
 
 if 'data' in st.session_state and 'model' in st.session_state:
@@ -203,27 +192,29 @@ if 'data' in st.session_state and 'model' in st.session_state:
     # --- CHART ---
     traces = []
     columns = []
-    if model == "basic":
-        traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers"))
+    if model == "Basic PAMA":
+        traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers", line=dict(color="#1e90ff")))
         columns = ["shear", "Viscosity (cP)"]
-    elif model == "temperature":
-        traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers"))
-        traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers"))
+    elif model == "PAMA with Temperature":
+        traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers", line=dict(color="#1e90ff")))
+        traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers", line=dict(color="#4169e1")))
         columns = ["shear", "25°C Reference", list(data.keys())[2]]
-    elif model == "degradation":
-        traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers"))
-        traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers"))
+    elif model == "PAMA with Degradation":
+        traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers", line=dict(color="#1e90ff")))
+        traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers", line=dict(color="#ff4500")))
         columns = ["shear", "Polymer UD", "Polymer Degraded"]
 
     fig = go.Figure(
         data=traces,
         layout=go.Layout(
-            title=f"{model.capitalize()} PAMA Viscosity vs Shear Rate",
-            xaxis={"title": "Shear rate (s⁻¹)", "type": "log", "gridcolor": "lightgray"},
-            yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "lightgray"},
+            title=f"{model} Analysis",
+            xaxis={"title": "Shear Rate (s⁻¹)", "type": "log", "gridcolor": "#e0e0e0"},
+            yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "#e0e0e0"},
             template="plotly_white",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "center", "x": 0.5},
-            margin={"t": 50, "b": 40, "l": 40, "r": 40},
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5},
+            margin={"t": 60, "b": 50, "l": 50, "r": 50},
+            plot_bgcolor="#f9f9f9",
+            paper_bgcolor="#f9f9f9",
             hovermode="x unified"
         )
     )
@@ -231,16 +222,17 @@ if 'data' in st.session_state and 'model' in st.session_state:
 
     # --- TABLE ---
     df = pd.DataFrame({col: data[col] for col in columns})
-    st.table(df)
+    st.table(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid #e0e0e0'}))
 
     # --- DOWNLOAD BUTTON ---
     csv = df.to_csv(index=False)
     st.download_button(
-        label="Download CSV",
+        label="Download Data",
         data=csv,
-        file_name=f"{model}_pama.csv",
+        file_name=f"{model.replace(' ', '_').lower()}_data.csv",
         mime="text/csv",
-        key="download-button"
+        key="download_button",
+        help="Export the current data as a CSV file"
     )
 
 st.markdown("</div></div>", unsafe_allow_html=True)
