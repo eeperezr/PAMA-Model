@@ -1,5 +1,7 @@
 # 🧪 PAMA Rheology Modeling App
 
+PAMA rheology software: a tool for the prediction of γ ̇  vs η_s curves, analysis of theories and experiments for polymer solutions and their degradation in EOR
+
 A Streamlit web application for simulating polymer viscosity behavior using the **PAMA method**. It provides three modeling approaches:
 - 📘 Basic PAMA Model
 - 🌡️ PAMA Model with Temperature Dependence
