@@ -3,7 +3,6 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
-import io
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -12,139 +11,23 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- CSS STYLING (refined for better layout) ---
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Arial&display=swap');
-    body {
-        font-family: 'Arial', sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f0f2f5;
-        color: #1a1a1a;
-    }
-    header {
-        background: linear-gradient(90deg, #1e90ff, #4169e1);
-        color: white;
-        text-align: center;
-        padding: 1.5rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        position: fixed;
-        top: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-    #sidebar {
-        width: 18rem;
-        position: fixed;
-        top: 5rem;
-        bottom: 0;
-        background-color: #ffffff;
-        padding: 1.5rem;
-        border-right: 1px solid #e0e0e0;
-        overflow-y: auto;
-        box-shadow: 2px 0 6px rgba(0,0,0,0.1);
-        z-index: 900;
-    }
-    #content {
-        margin-left: 18rem;
-        padding: 6rem 2rem 2rem 2rem;
-        min-height: calc(100vh - 5rem);
-    }
-    .model-section {
-        background-color: #fff;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
-    }
-    .stSelectbox, .stSlider, .stNumberInput {
-        margin-bottom: 1rem;
-    }
-    button {
-        background-color: #1e90ff;
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background-color 0.3s ease;
-    }
-    button:hover {
-        background-color: #104e8b;
-    }
-    .stPlotlyChart {
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    table {
-        width: 100%;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        margin-top: 1.5rem;
-    }
-    th {
-        background-color: #f0f0f0;
-        color: #333;
-        padding: 0.75rem;
-        text-align: left;
-    }
-    td {
-        padding: 0.75rem;
-        border-top: 1px solid #e0e0e0;
-    }
-    h1, h2 {
-        color: #1a1a1a;
-        font-weight: 600;
-    }
-    ul {
-        list-style-type: disc;
-        padding-left: 1.5rem;
-    }
-    a {
-        color: #1e90ff;
-        text-decoration: none;
-    }
-    a:hover {
-        color: #104e8b;
-        text-decoration: underline;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# --- HEADER ---
-st.markdown("<header><h1>PAMA Rheology Modeling App 🧪</h1><p>Explore polymer rheology with stunning visualizations.</p></header>", unsafe_allow_html=True)
-
 # --- SIDEBAR (Parameters and Model Selection) ---
 with st.sidebar:
-    st.markdown("<div id='sidebar'>", unsafe_allow_html=True)
-    st.markdown("<h3>Navigation</h3>", unsafe_allow_html=True)
+    st.title("PAMA Controls")
+    st.markdown("### Navigation")
     st.markdown("""
-        <ul>
-            <li><a href="#">Documentation</a>
-                <ul>
-                    <li><a href="#">Overview</a></li>
-                    <li><a href="#">Setup</a></li>
-                    <li><a href="#">Manual</a></li>
-                    <li><a href="#">Developers</a></li>
-                    <li><a href="#">Contributors</a></li>
-                    <li><a href="#">Changelog</a></li>
-                </ul>
-            </li>
-            <li><a href="https://example.com">Source Code</a></li>
-        </ul>
-        <p>Created by:</p>
-        <ul>
-            <li>Eduar Perez (University of Buenos Aires)</li>
-        </ul>
-    """, unsafe_allow_html=True)
+    - [Documentation](#)
+      - Overview
+      - Setup
+      - Manual
+      - Developers
+      - Contributors
+      - Changelog
+    - [Source Code](https://example.com)
+    - Created by: Eduar Perez (University of Buenos Aires)
+    """)
 
-    model = st.selectbox("Choose Model", ["Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"], key="model_select")
+    model = st.selectbox("Choose Model", ["Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"])
 
     if 'conc' not in st.session_state:
         st.session_state.conc = 2.0
@@ -157,16 +40,16 @@ with st.sidebar:
     if 'eta7d' not in st.session_state:
         st.session_state.eta7d = 7.354
 
-    st.session_state.conc = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="conc_slider")
-    st.session_state.mw = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="mw_slider")
-    st.session_state.eta7 = st.number_input("η@7.3 (cP)", min_value=0.01, value=20.0, format="%.3f", key="eta7_input")
+    st.session_state.conc = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
+    st.session_state.mw = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
+    st.session_state.eta7 = st.number_input("η@7.3 (cP)", min_value=0.01, value=20.0, format="%.3f")
 
     if model == "PAMA with Temperature":
-        st.session_state.temp = st.slider("Temperature (°C)", 0, 100, 35, 1, key="temp_slider")
+        st.session_state.temp = st.slider("Temperature (°C)", 0, 100, 35, 1)
     elif model == "PAMA with Degradation":
-        st.session_state.eta7d = st.number_input("η@7.3 (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f", key="eta7d_input")
+        st.session_state.eta7d = st.number_input("η@7.3 (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
 
-    if st.button("Run Model", key="run_button"):
+    if st.button("Run Model"):
         if model == "Basic PAMA":
             data = model_basic_pama(st.session_state.conc, st.session_state.mw, st.session_state.eta7)
         elif model == "PAMA with Temperature":
@@ -177,65 +60,60 @@ with st.sidebar:
         st.session_state.data = data
         st.session_state.model = model
 
-    st.markdown("</div>", unsafe_allow_html=True)
+# --- MAIN CONTENT (Graphs and Fancy Stuff) ---
+st.title("PAMA Rheology Models")
+st.markdown("### Visualize Polymer Behavior")
+st.markdown("Explore detailed rheology insights with interactive plots and data.")
 
-# --- CONTENT AREA (Graphs and Fancy Stuff) ---
-st.markdown("<div id='content'>", unsafe_allow_html=True)
-st.markdown("<h2>Rheology Insights</h2>", unsafe_allow_html=True)
-st.markdown("<p>Visualize and analyze polymer behavior with precision.</p>", unsafe_allow_html=True)
-st.markdown("<div class='model-section'>", unsafe_allow_html=True)
+with st.container():
+    if 'data' in st.session_state and 'model' in st.session_state:
+        data = st.session_state.data
+        model = st.session_state.model
 
-if 'data' in st.session_state and 'model' in st.session_state:
-    data = st.session_state.data
-    model = st.session_state.model
+        # --- CHART ---
+        traces = []
+        columns = []
+        if model == "Basic PAMA":
+            traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers", line=dict(color="#1e90ff")))
+            columns = ["shear", "Viscosity (cP)"]
+        elif model == "PAMA with Temperature":
+            traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers", line=dict(color="#1e90ff")))
+            traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers", line=dict(color="#4169e1")))
+            columns = ["shear", "25°C Reference", list(data.keys())[2]]
+        elif model == "PAMA with Degradation":
+            traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers", line=dict(color="#1e90ff")))
+            traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers", line=dict(color="#ff4500")))
+            columns = ["shear", "Polymer UD", "Polymer Degraded"]
 
-    # --- CHART ---
-    traces = []
-    columns = []
-    if model == "Basic PAMA":
-        traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers", line=dict(color="#1e90ff")))
-        columns = ["shear", "Viscosity (cP)"]
-    elif model == "PAMA with Temperature":
-        traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers", line=dict(color="#1e90ff")))
-        traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers", line=dict(color="#4169e1")))
-        columns = ["shear", "25°C Reference", list(data.keys())[2]]
-    elif model == "PAMA with Degradation":
-        traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers", line=dict(color="#1e90ff")))
-        traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers", line=dict(color="#ff4500")))
-        columns = ["shear", "Polymer UD", "Polymer Degraded"]
-
-    fig = go.Figure(
-        data=traces,
-        layout=go.Layout(
-            title=f"{model} Analysis",
-            xaxis={"title": "Shear Rate (s⁻¹)", "type": "log", "gridcolor": "#e0e0e0"},
-            yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "#e0e0e0"},
-            template="plotly_white",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5},
-            margin={"t": 60, "b": 50, "l": 50, "r": 50},
-            plot_bgcolor="#f9f9f9",
-            paper_bgcolor="#f9f9f9",
-            hovermode="x unified"
+        fig = go.Figure(
+            data=traces,
+            layout=go.Layout(
+                title=f"{model} Analysis",
+                xaxis={"title": "Shear Rate (s⁻¹)", "type": "log", "gridcolor": "#e0e0e0"},
+                yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "#e0e0e0"},
+                template="plotly_white",
+                legend={"orientation": "h", "yanchor": "bottom", "y": 1.1, "xanchor": "center", "x": 0.5"},
+                margin={"t": 60, "b": 50, "l": 50, "r": 50},
+                plot_bgcolor="#f9f9f9",
+                paper_bgcolor="#f9f9f9",
+                hovermode="x unified"
+            )
         )
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # --- TABLE ---
-    df = pd.DataFrame({col: data[col] for col in columns})
-    st.table(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid #e0e0e0'}))
+        # --- TABLE ---
+        df = pd.DataFrame({col: data[col] for col in columns})
+        st.table(df.style.set_properties(**{'text-align': 'center', 'border': '1px solid #e0e0e0'}))
 
-    # --- DOWNLOAD BUTTON ---
-    csv = df.to_csv(index=False)
-    st.download_button(
-        label="Download Data",
-        data=csv,
-        file_name=f"{model.replace(' ', '_').lower()}_data.csv",
-        mime="text/csv",
-        key="download_button",
-        help="Export the current data as a CSV file"
-    )
-
-st.markdown("</div></div>", unsafe_allow_html=True)
+        # --- DOWNLOAD BUTTON ---
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label="Download Data",
+            data=csv,
+            file_name=f"{model.replace(' ', '_').lower()}_data.csv",
+            mime="text/csv",
+            help="Export the current data as a CSV file"
+        )
 
 # --- MODEL IMPLEMENTATIONS ---
 def model_basic_pama(C, MW, eta7_exp):
