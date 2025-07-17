@@ -9,7 +9,7 @@ st.set_page_config(
     page_title="PAMA Rheology Models",
     page_icon="🧪",
     layout="wide",
-    initial_sidebar_state="collapsed",  # Collapse sidebar by default
+    initial_sidebar_state="collapsed",
 )
 
 # --- CUSTOM CSS for RepTate-like UI ---
@@ -21,7 +21,6 @@ st.markdown(
         color: #222222;
         font-family: 'Arial', sans-serif;
     }
-    /* Sidebar styling (Table of Contents) */
     .css-1d391kg {
         width: 200px;
         background-color: #f0f0f0;
@@ -32,19 +31,16 @@ st.markdown(
         bottom: 0;
         overflow-y: auto;
     }
-    /* Header styling */
     .css-1aumxhk {
         background-color: #1e90ff;
         color: white;
         padding: 10px;
         text-align: center;
     }
-    /* Main content area */
     .block-container {
         margin-left: 220px;
         padding: 20px;
     }
-    /* Buttons styling */
     .stButton>button {
         background-color: #1e90ff;
         color: white;
@@ -58,16 +54,13 @@ st.markdown(
         background-color: #104e8b;
         cursor: pointer;
     }
-    /* Headers styling */
     h1, h2, h3 {
         color: #222222;
     }
-    /* Dataframe styling */
     .dataframe th, .dataframe td {
         padding: 0.5rem 0.8rem;
         text-align: center;
     }
-    /* Plotly chart container */
     .stPlotlyChart > div {
         border-radius: 5px;
         box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -95,8 +88,7 @@ with st.sidebar:
     st.markdown("<p>More Info:</p>", unsafe_allow_html=True)
     st.markdown("<ul><li><a href='https://example.com'>Source Code</a></li></ul>", unsafe_allow_html=True)
     st.markdown("<p>Authors:</p>", unsafe_allow_html=True)
-    st.markdown("<ul><li>Jorge Ramirez (jorge.ramirez@upm.es)</li>", unsafe_allow_html=True)
-    st.markdown("<li>Victor Boudara (victor.bc@gmail.com)</li></ul>", unsafe_allow_html=True)
+    st.markdown("<ul><li>Eduar Perez (University of Buenos Aires)</li></ul>", unsafe_allow_html=True)
 
 # --- HELPER: PLOT FUNCTION ---
 def make_plot(df, title, ycols, labels):
@@ -324,4 +316,4 @@ else:
 
 # --- FOOTER ---
 st.markdown("<hr>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #666;'>Made by Eduar — Powered by Streamlit & Plotly</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #666;'>Made by Eduar Perez — Powered by Streamlit & Plotly</p>", unsafe_allow_html=True)
