@@ -195,6 +195,10 @@ html_content = """
         <div id="download-container"></div>
     </div>
 </div>
+"""
+
+# --- JAVASCRIPT (from script.js, adjusted for Streamlit) ---
+js_content = """
 <script>
     const modelSelect = document.getElementById('model-select');
     const params = document.querySelectorAll('.params');
@@ -305,6 +309,25 @@ html_content = """
 </script>
 """
 
+# --- COMBINE AND RENDER ---
+st.components.v1.html(
+    f"""
+    <script>
+        window.model_basic_pama = {json.dumps(model_basic_pama.__code__.co_consts[0])};
+        window.model_pama_temperature = {json.dumps(model_pama_temperature.__code__.co_consts[0])};
+        window.model_pama_degradation = {json.dumps(model_pama_degradation.__code__.co_consts[0])};
+        window.st_params = {json.dumps(st.session_state)};
+        // Receive data from JS and set in session_state
+        window.addEventListener('message', function(event) {{
+            if (event.data.type === 'setData') {{
+                window.parent.postMessage({{ type: 'setSessionState', data: event.data.data, model: event.data.model }}, '*');
+            }}
+        }});
+    </script>
+    """ + html_content + js_content,
+    height=800
+)
+
 # --- MODEL IMPLEMENTATIONS ---
 def model_basic_pama(C, MW, eta7_exp):
     Temp = 298
@@ -400,22 +423,19 @@ def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
     etaC_D = eta_in + (eta_0C_D - eta_in) * (1 + (lC_D * shear)**2)**((nC_D - 1) / 2)
     return {"shear": shear.tolist(), "Polymer UD": etaC.tolist(), "Polymer Degraded": etaC_D.tolist()}
 
-# --- EXPOSE MODELS AND PARAMETERS TO JAVASCRIPT ---
-st.components.v1.html(f"""
+# --- HANDLE MESSAGE FROM JAVASCRIPT ---
+def handle_message(event):
+    if event.data.type == 'setSessionState':
+        st.session_state.data = event.data.data
+        st.session_state.model = event.data.model
+
+# --- EXPOSE MESSAGE HANDLER (Streamlit doesn't support direct message events, so we'll simulate with a placeholder) ---
+st.components.v1.html("""
 <script>
-    window.model_basic_pama = {json.dumps(model_basic_pama.__code__.co_consts[0])};
-    window.model_pama_temperature = {json.dumps(model_pama_temperature.__code__.co_consts[0])};
-    window.model_pama_degradation = {json.dumps(model_pama_degradation.__code__.co_consts[0])};
-    window.st_params = {json.dumps(st.session_state)};
-    // Receive data from JS and set in session_state
-    window.addEventListener('message', (event) => {
-        if (event.data.type === 'setData') {
-            st.session_state.data = event.data.data;
-            st.session_state.model = event.data.model;
-        }
-    });
+    // Placeholder for message handling (Streamlit limitation)
+    window.dispatchEvent(new Event('message'));
 </script>
-""" + html_content, height=800)
+""", height=0)
 
 # --- DOWNLOAD BUTTON ---
 if 'data' in st.session_state and 'model' in st.session_state:
