@@ -4,260 +4,130 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy.interpolate import interp1d
 
-# Page config and style
-st.set_page_config(page_title="PAMA Method Models", layout="wide")
+# Page config
+st.set_page_config(page_title="PAMA Viscosity Models", layout="wide")
 
-st.markdown(
-    """
+# Theme switcher (manual override for colors)
+theme = st.sidebar.selectbox("🌙 Theme", ["Light", "Dark"])
+if theme == "Dark":
+    bg_color = "#1e1e1e"
+    text_color = "#ffffff"
+else:
+    bg_color = "#f5f8fc"
+    text_color = "#222222"
+
+st.markdown(f"""
     <style>
-    body {
-        background-color: #ffffff;
-        color: #222222;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .stButton>button {
-        background-color: #0a84ff;
+    body {{
+        background-color: {bg_color};
+        color: {text_color};
+        font-family: 'Segoe UI', sans-serif;
+    }}
+    .stButton>button {{
+        background-color: #005bbb;
         color: white;
         font-weight: bold;
-        border-radius: 8px;
-        padding: 0.5em 1.5em;
-        transition: background-color 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #006fd6;
-    }
-    .block-container {
-        padding: 2rem 3rem 3rem 3rem;
-    }
+        border-radius: 6px;
+        padding: 0.5em 1.2em;
+    }}
+    .stButton>button:hover {{
+        background-color: #003e87;
+    }}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
-st.title("PAMA Method Models")
-st.sidebar.header("Choose your model")
 
-model_choice = st.sidebar.radio(
-    "Select Model",
-    ("Basic PAMA", "PAMA with Temperature", "PAMA with Degradation")
-)
+# ---------- MODEL FUNCTIONS (paste unchanged) ----------
+# Paste the functions:
+# model_basic_pama()
+# model_pama_temperature()
+# model_pama_degradation()
+# (from your original script—they stay the same)
 
-# ========== Model 1: Basic PAMA ==========
-def model_basic_pama(C, MW, eta7_exp):
-    Temp = 298  # constant 25 C in Kelvin
-    eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)) + (0.0608 * 0 ** 1.3533))
+# --- UI Tabs ---
+st.title("🧪 PAMA Viscosity Modeling Platform")
 
-    ceta = np.arange(0.1, 100.1, 0.1)
-    eta_0 = 1 + ceta + 0.582 * ceta ** 2.009 + 0.022 * ceta ** 4
-    parc = -0.08212 * ceta
-    n = 1 - (0.6187 - 0.5203 * np.exp(parc))
-    parc2 = (n - 1) / 2
-    l_d = 0.251 + 1.54 * MW * ceta / (C * Temp)
-    l = l_d * (0.810 + 0.0230 * ceta ** 2.438)
-    parc1 = (l * 7.3) ** 2
-    eta7 = 1 + (eta_0 - 1) * (1 + parc1) ** parc2
+tabs = st.tabs(["Basic PAMA", "PAMA with Temperature", "PAMA with Degradation"])
+multi_plot = st.sidebar.checkbox("📊 Show All Curves on Same Graph", value=False)
 
-    # interpolate ceta at experimental eta7
-    f = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")
-    ceta_exp = f(eta7_exp)
+# ---- Tab 1: Basic PAMA ----
+with tabs[0]:
+    st.subheader("Basic PAMA")
+    C1 = st.number_input("Concentration (g/L)", key="C1", value=2.0, min_value=0.1, max_value=50.0)
+    MW1 = st.number_input("Molecular Weight (MDa)", key="MW1", value=8.0, min_value=0.1, max_value=100.0)
+    eta7_1 = st.number_input("Experimental η₇ (cP)", key="eta7_1", value=15.0, min_value=0.1)
+    run1 = st.button("Generate", key="btn1")
 
-    # Carreau-Yassuda coefficients
-    eta_0C = 1 + ceta_exp + 0.582 * ceta_exp ** 2.009 + 0.022 * ceta_exp ** 4
-    parcC = -0.08212 * ceta_exp
-    nC = 1 - (0.6187 - 0.5203 * np.exp(parcC))
-    l_dC = 0.251 + 1.54 * MW * ceta_exp / (C * Temp)
-    lC = l_dC * (0.810 + 0.0230 * ceta_exp ** 2.438)
+    if run1:
+        df1, fig1 = model_basic_pama(C1, MW1, eta7_1)
+        if multi_plot:
+            st.session_state.fig_base = fig1
+            st.session_state.df_base = df1
+        else:
+            st.plotly_chart(fig1, use_container_width=True)
+            st.download_button("Download CSV", df1.to_csv(index=False), "basic_pama.csv", "text/csv")
 
-    shear = np.concatenate([np.arange(0.01, 1, 0.01), np.arange(1, 1000, 1)])
-    etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear) ** 2) ** ((nC - 1) / 2)
 
-    df = pd.DataFrame({"shear": shear, "eta": etaC})
+# ---- Tab 2: PAMA with Temperature ----
+with tabs[1]:
+    st.subheader("PAMA with Temperature")
+    C2 = st.number_input("Concentration (g/L)", key="C2", value=2.0)
+    MW2 = st.number_input("Molecular Weight (MDa)", key="MW2", value=8.0)
+    eta7_2 = st.number_input("Experimental η₇ (cP)", key="eta7_2", value=15.0)
+    T2 = st.number_input("Temperature (°C)", key="T2", value=25)
+    run2 = st.button("Generate", key="btn2")
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=shear, y=etaC, mode='lines', name="Viscosity"))
-    fig.update_layout(
-        xaxis=dict(type="log", title="Shear rate (s⁻¹)"),
+    if run2:
+        df2, fig2 = model_pama_temperature(C2, MW2, eta7_2, T2)
+        if multi_plot:
+            st.session_state.fig_temp = fig2
+            st.session_state.df_temp = df2
+        else:
+            st.plotly_chart(fig2, use_container_width=True)
+            st.download_button("Download CSV", df2.to_csv(index=False), "pama_temperature.csv", "text/csv")
+
+
+# ---- Tab 3: PAMA with Degradation ----
+with tabs[2]:
+    st.subheader("PAMA with Degradation")
+    C3 = st.number_input("Concentration (g/L)", key="C3", value=2.0)
+    MW3 = st.number_input("Molecular Weight (MDa)", key="MW3", value=8.0)
+    eta7_3 = st.number_input("Undegraded η₇ (cP)", key="eta7_3", value=15.0)
+    eta7_3D = st.number_input("Degraded η₇ (cP)", key="eta7_3D", value=10.0)
+    run3 = st.button("Generate", key="btn3")
+
+    if run3:
+        df3, fig3 = model_pama_degradation(C3, MW3, eta7_3, eta7_3D)
+        if multi_plot:
+            st.session_state.fig_deg = fig3
+            st.session_state.df_deg = df3
+        else:
+            st.plotly_chart(fig3, use_container_width=True)
+            st.download_button("Download CSV", df3.to_csv(index=False), "pama_degradation.csv", "text/csv")
+
+
+# ---- Overlay All Curves ----
+if multi_plot and any(k in st.session_state for k in ["fig_base", "fig_temp", "fig_deg"]):
+    st.subheader("📊 Combined Comparison")
+    combined_fig = go.Figure()
+
+    if "fig_base" in st.session_state:
+        df = st.session_state.df_base
+        combined_fig.add_trace(go.Scatter(x=df["shear"], y=df["eta"], name="Basic PAMA", mode='lines'))
+
+    if "fig_temp" in st.session_state:
+        df = st.session_state.df_temp
+        combined_fig.add_trace(go.Scatter(x=df["shear"], y=df["eta_temp"], name="PAMA Temp", mode='lines'))
+
+    if "fig_deg" in st.session_state:
+        df = st.session_state.df_deg
+        combined_fig.add_trace(go.Scatter(x=df["shear"], y=df["eta"], name="Undegraded", mode='lines'))
+        combined_fig.add_trace(go.Scatter(x=df["shear"], y=df["eta_degraded"], name="Degraded", mode='lines'))
+
+    combined_fig.update_layout(
+        xaxis=dict(type="log", title="Shear Rate (s⁻¹)"),
         yaxis=dict(type="log", title="Viscosity (cP)"),
-        title="Basic PAMA Model",
+        title="Overlay of All Selected PAMA Models",
         template="plotly_white"
     )
-
-    return df, fig
-
-
-# ========== Model 2: PAMA with Temperature ==========
-def model_pama_temperature(C, MW, eta7_exp, T_wanted_C):
-    T_wanted = T_wanted_C + 273  # Convert to Kelvin
-    Temp = 298  # Reference temp 25 C in Kelvin
-    eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)) + (0.0608 * 0 ** 1.3533))
-
-    ceta = np.arange(0.1, 100.1, 0.1)
-    eta_0 = 1 + ceta + 0.582 * ceta ** 2.009 + 0.022 * ceta ** 4
-    parc = -0.08212 * ceta
-    n = 1 - (0.6187 - 0.5203 * np.exp(parc))
-    parc2 = (n - 1) / 2
-    l_d = 0.251 + 1.54 * MW * ceta / (C * Temp)
-    l = l_d * (0.810 + 0.0230 * ceta ** 2.438)
-    parc1 = (l * 7.3) ** 2
-    eta7 = 1 + (eta_0 - 1) * (1 + parc1) ** parc2
-
-    f = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")
-    ceta_exp = f(eta7_exp)
-
-    # Carreau coefficients at reference Temp
-    eta_0C = 1 + ceta_exp + 0.582 * ceta_exp ** 2.009 + 0.022 * ceta_exp ** 4
-    parcC = -0.08212 * ceta_exp
-    nC = 1 - (0.6187 - 0.5203 * np.exp(parcC))
-    parc2C = (nC - 1) / 2
-    l_dC = 0.251 + 1.54 * MW * ceta_exp / (C * Temp)
-    lC = l_dC * (0.810 + 0.0230 * ceta_exp ** 2.438)
-
-    shear = np.concatenate([np.arange(0.01, 1, 0.01), np.arange(1, 1000, 1)])
-
-    etaC_ref = eta_in + (eta_0C - eta_in) * (1 + (lC * shear) ** 2) ** ((nC - 1) / 2)
-
-    # Temperature dependent eta_in
-    eta_in_T = np.exp(-3.7188 + (578.919 / (-137.546 + T_wanted)) + (0.0608 * 0 ** 1.3533))
-
-    # Calculate temperature dependent eta_0 and lC
-    eta_0T = eta_in_T * (1 + ceta_exp + 0.582 * ceta_exp ** 2.009 + 0.022 * ceta_exp ** 4)
-    l_dC_T = 0.251 + 1.54 * MW * ceta_exp / (C * T_wanted)
-    lC_T = l_dC_T * (0.810 + 0.0230 * ceta_exp ** 2.438)
-
-    etaC_temp = eta_in_T + (eta_0T - eta_in_T) * (1 + (lC_T * shear) ** 2) ** ((nC - 1) / 2)
-
-    df = pd.DataFrame({
-        "shear": shear,
-        "eta_ref": etaC_ref,
-        "eta_temp": etaC_temp
-    })
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=shear, y=etaC_ref, mode='lines', name="T = 25°C"))
-    fig.add_trace(go.Scatter(x=shear, y=etaC_temp, mode='lines', name=f"T = {T_wanted_C}°C"))
-    fig.update_layout(
-        xaxis=dict(type="log", title="Shear rate (s⁻¹)"),
-        yaxis=dict(type="log", title="Viscosity (cP)"),
-        title="PAMA Model with Temperature Dependence",
-        template="plotly_white"
-    )
-
-    return df, fig
-
-
-# ========== Model 3: PAMA with Degradation ==========
-def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
-    alpha = 0.763
-    Temp = 298
-    eta_in = np.exp(-3.7188 + (578.919 / (-137.546 + Temp)) + (0.0608 * 0 ** 1.3533))
-
-    c_med = C * 0.5
-    ceta = np.arange(0.1, 100.1, 0.1)
-    eta = ceta / c_med
-
-    eta_0 = 1 + ceta + 0.582 * ceta ** 2.009 + 0.022 * ceta ** 4
-    etab = eta / (2 ** alpha)
-    cetab = etab * c_med
-    eta_0_FD = 1 + cetab + 0.582 * cetab ** 2.009 + 0.022 * cetab ** 4
-
-    beta = np.log(eta_0_FD) - np.log(eta_0)
-
-    parc = -0.08212 * ceta
-    parcb = -0.08212 * cetab
-    n = 1 - (0.6187 - 0.5203 * np.exp(parc))
-    n_FD = 1 - (0.6187 - 0.5203 * np.exp(parcb))
-
-    parc2 = (n - 1) / 2
-    parc2b = (n_FD - 1) / 2
-
-    l_d = 0.251 + 1.54 * MW * ceta / (C * Temp)
-    l_d_b = 0.251 + 1.54 * MW * cetab / (C * Temp)
-
-    l = l_d * (0.810 + 0.0230 * ceta ** 2.438)
-    lb = l_d_b * (0.810 + 0.0230 * cetab ** 2.438)
-
-    parc1 = (l * 7.3) ** 2
-    parc1b = (lb * 7.3) ** 2
-
-    eta7 = 1 + (eta_0 - 1) * (1 + parc1) ** parc2
-    eta7_FD = 1 + (eta_0_FD - 1) * (1 + parc1b) ** parc2b
-
-    f = interp1d(eta7, ceta, bounds_error=False, fill_value="extrapolate")
-    ceta_exp = f(eta7_exp)
-
-    f_D = interp1d(eta7_FD, cetab, bounds_error=False, fill_value="extrapolate")
-    cetab_exp = f_D(eta7_exp_D)
-
-    eta_0C = 1 + ceta_exp + 0.582 * ceta_exp ** 2.009 + 0.022 * ceta_exp ** 4
-    eta_0C_D = 1 + cetab_exp + 0.582 * cetab_exp ** 2.009 + 0.022 * cetab_exp ** 4
-
-    parcC = -0.08212 * ceta_exp
-    parcC_D = -0.08212 * cetab_exp
-
-    nC = 1 - (0.6187 - 0.5203 * np.exp(parcC))
-    nC_D = 1 - (0.6187 - 0.5203 * np.exp(parcC_D))
-
-    parc2C = (nC - 1) / 2
-    parc2C_D = (nC_D - 1) / 2
-
-    l_dC = 0.251 + 1.54 * MW * ceta_exp / (C * Temp)
-    l_dC_D = 0.251 + 1.54 * MW * cetab_exp / (C * Temp)
-
-    lC = l_dC * (0.810 + 0.0230 * ceta_exp ** 2.438)
-    lC_D = l_dC_D * (0.810 + 0.0230 * cetab_exp ** 2.438)
-
-    shear = np.concatenate([np.arange(0.01, 1, 0.01), np.arange(1, 1000, 1)])
-
-    etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear) ** 2) ** ((nC - 1) / 2)
-    etaC_D = eta_in + (eta_0C_D - eta_in) * (1 + (lC_D * shear) ** 2) ** ((nC_D - 1) / 2)
-
-    df = pd.DataFrame({"shear": shear, "eta": etaC, "eta_degraded": etaC_D})
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=shear, y=etaC, mode='lines', name="Undegraded"))
-    fig.add_trace(go.Scatter(x=shear, y=etaC_D, mode='lines', name="Degraded"))
-    fig.update_layout(
-        xaxis=dict(type="log", title="Shear rate (s⁻¹)"),
-        yaxis=dict(type="log", title="Viscosity (cP)"),
-        title="PAMA Model with Degradation",
-        template="plotly_white"
-    )
-
-    return df, fig
-
-
-# -------- UI Inputs and Logic --------
-if model_choice == "Basic PAMA":
-    st.header("Basic PAMA Model Parameters")
-
-    C = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="C_basic")
-    MW = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="MW_basic")
-    eta7_exp = st.slider("Intrinsic Viscosity η₇ Experimental (cP)", 1.0, 100.0, 15.0, 0.5, key="eta7_basic")
-
-    if st.button("Calculate Basic PAMA", key="btn_basic"):
-        df_basic, fig_basic = model_basic_pama(C, MW, eta7_exp)
-        st.plotly_chart(fig_basic, use_container_width=True)
-
-elif model_choice == "PAMA with Temperature":
-    st.header("PAMA Model with Temperature Dependence")
-
-    C = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="C_temp")
-    MW = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="MW_temp")
-    eta7_exp = st.slider("Intrinsic Viscosity η₇ Experimental (cP)", 1.0, 100.0, 15.0, 0.5, key="eta7_temp")
-    T_wanted = st.slider("Temperature (°C)", 20, 80, 25, 1, key="T_temp")
-
-    if st.button("Calculate PAMA with Temperature", key="btn_temp"):
-        df_temp, fig_temp = model_pama_temperature(C, MW, eta7_exp, T_wanted)
-        st.plotly_chart(fig_temp, use_container_width=True)
-
-else:
-    st.header("PAMA Model with Degradation")
-
-    C = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1, key="C_deg")
-    MW = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1, key="MW_deg")
-    eta7_exp = st.slider("Intrinsic Viscosity η₇ Experimental (cP)", 1.0, 100.0, 15.0, 0.5, key="eta7_deg")
-    eta7_exp_D = st.slider("Degraded Intrinsic Viscosity η₇ Experimental (cP)", 1.0, 100.0, 10.0, 0.5, key="eta7_deg_D")
-
-    if st.button("Calculate PAMA with Degradation", key="btn_deg"):
-        df_deg, fig_deg = model_pama_degradation(C, MW, eta7_exp, eta7_exp_D)
-        st.plotly_chart(fig_deg, use_container_width=True)
+    st.plotly_chart(combined_fig, use_container_width=True)
