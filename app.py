@@ -84,12 +84,12 @@ st.markdown("<p style='font-size: 16px; color: #444; text-align: center;'>Tool f
 # --- SIDEBAR (Table of Contents) ---
 with st.sidebar:
     st.markdown("<h3>Table of Contents</h3>", unsafe_allow_html=True)
-    st.markdown("<ul><li><a href='#'>PAMA Documentation</a></li>", unsafe_allow_html=True)
+    st.markdown("<ul><li><a href='#'>PAMA Documentation</a></li></ul>", unsafe_allow_html=True)
     st.markdown("<ul><li><a href='#'>Contents</a></li>", unsafe_allow_html=True)
     st.markdown("<ul><li><a href='#'>About PAMA</a></li>", unsafe_allow_html=True)
     st.markdown("<li><a href='#'>Installation</a></li>", unsafe_allow_html=True)
     st.markdown("<li><a href='#'>User Manual</a></li>", unsafe_allow_html=True)
-    st.markdown("<li><a href='#'>PAMA for Developers</a></li>", unsafe_allow_helper=True)
+    st.markdown("<li><a href='#'>PAMA for Developers</a></li>", unsafe_allow_html=True)
     st.markdown("<li><a href='#'>PAMA Contributors</a></li>", unsafe_allow_html=True)
     st.markdown("<li><a href='#'>Version History</a></li></ul>", unsafe_allow_html=True)
     st.markdown("<p>More Info:</p>", unsafe_allow_html=True)
