@@ -3,7 +3,6 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
-import json
 import io
 
 # --- PAGE CONFIG ---
@@ -128,204 +127,42 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- HTML STRUCTURE (from index.html, adapted with download button) ---
-html_content = """
-<header>
-    <h1>PAMA Rheology Modeling App 🧪</h1>
-    <p>Tool for analyzing polymer rheology models with interactive visualizations.</p>
-</header>
-<div id="sidebar">
-    <h3>Table of Contents</h3>
-    <ul>
-        <li><a href="#">PAMA Documentation</a></li>
+# --- HTML STRUCTURE (simplified for Streamlit) ---
+st.markdown(
+    """
+    <header>
+        <h1>PAMA Rheology Modeling App 🧪</h1>
+        <p>Tool for analyzing polymer rheology models with interactive visualizations.</p>
+    </header>
+    <div id="sidebar">
+        <h3>Table of Contents</h3>
         <ul>
-            <li><a href="#">Contents</a></li>
-            <li><a href="#">About PAMA</a></li>
-            <li><a href="#">Installation</a></li>
-            <li><a href="#">User Manual</a></li>
-            <li><a href="#">PAMA for Developers</a></li>
-            <li><a href="#">PAMA Contributors</a></li>
-            <li><a href="#">Version History</a></li>
+            <li><a href="#">PAMA Documentation</a></li>
+            <ul>
+                <li><a href="#">Contents</a></li>
+                <li><a href="#">About PAMA</a></li>
+                <li><a href="#">Installation</a></li>
+                <li><a href="#">User Manual</a></li>
+                <li><a href="#">PAMA for Developers</a></li>
+                <li><a href="#">PAMA Contributors</a></li>
+                <li><a href="#">Version History</a></li>
+            </ul>
         </ul>
-    </ul>
-    <p>More Info:</p>
-    <ul>
-        <li><a href="https://example.com">Source Code</a></li>
-    </ul>
-    <p>Authors:</p>
-    <ul>
-        <li>Eduar Perez (University of Buenos Aires)</li>
-    </ul>
-</div>
-<div id="content">
-    <h2>PAMA Rheology Models</h2>
-    <p>PAMA (Polymer Analysis and Modeling Application) is a tool for analyzing polymer rheology models with interactive visualizations.</p>
-    <div class="model-section">
-        <label for="model-select">Select Model:</label>
-        <select id="model-select">
-            <option value="basic">Basic PAMA</option>
-            <option value="temperature">PAMA with Temperature</option>
-            <option value="degradation">PAMA with Degradation</option>
-        </select>
-        <div id="params-basic" class="params">
-            <label>Concentration (g/L):</label><span id="conc-basic"></span><br>
-            <label>Molecular Weight (MDa):</label><span id="mw-basic"></span><br>
-            <label>η@7.3 experimental (cP):</label><span id="eta7-basic"></span><br>
-            <button id="run-basic">Run Basic Model</button>
-        </div>
-        <div id="params-temperature" class="params" style="display:none;">
-            <label>Concentration (g/L):</label><span id="conc-temp"></span><br>
-            <label>Molecular Weight (MDa):</label><span id="mw-temp"></span><br>
-            <label>η@7.3 at 25°C (cP):</label><span id="eta7-temp"></span><br>
-            <label>Target Temperature (°C):</label><span id="temp-target"></span><br>
-            <button id="run-temp">Run Temperature Model</button>
-        </div>
-        <div id="params-degradation" class="params" style="display:none;">
-            <label>Concentration (g/L):</label><span id="conc-deg"></span><br>
-            <label>Molecular Weight (MDa):</label><span id="mw-deg"></span><br>
-            <label>η@7.3 (Polymer UD) (cP):</label><span id="eta7-ud"></span><br>
-            <label>η@7.3 (Polymer D) (cP):</label><span id="eta7-d"></span><br>
-            <button id="run-deg">Run Degradation Model</button>
-        </div>
-        <div id="chart"></div>
-        <table id="data-table" style="display:none;">
-            <thead><tr><th>Shear</th><th>Viscosity</th></tr></thead>
-            <tbody></tbody>
-        </table>
-        <div id="download-container"></div>
+        <p>More Info:</p>
+        <ul>
+            <li><a href="https://example.com">Source Code</a></li>
+        </ul>
+        <p>Authors:</p>
+        <ul>
+            <li>Eduar Perez (University of Buenos Aires)</li>
+        </ul>
     </div>
-</div>
-"""
-
-# --- JAVASCRIPT (from script.js, adjusted for Streamlit) ---
-js_content = """
-<script>
-    const modelSelect = document.getElementById('model-select');
-    const params = document.querySelectorAll('.params');
-    const chart = document.getElementById('chart');
-    const dataTable = document.getElementById('data-table');
-    const downloadContainer = document.getElementById('download-container');
-
-    modelSelect.addEventListener('change', (e) => {
-        params.forEach(p => p.style.display = 'none');
-        document.getElementById(`params-${e.target.value}`).style.display = 'block';
-    });
-
-    function showLoading() {
-        chart.innerHTML = '<div class="flex items-center justify-center h-full"><span class="text-gray-500">Loading...</span></div>';
-        dataTable.style.display = 'none';
-        downloadContainer.innerHTML = '';
-    }
-
-    function updateParams() {
-        const params = {
-            'basic': { conc: 'conc-basic', mw: 'mw-basic', eta7: 'eta7-basic' },
-            'temperature': { conc: 'conc-temp', mw: 'mw-temp', eta7: 'eta7-temp', temp: 'temp-target' },
-            'degradation': { conc: 'conc-deg', mw: 'mw-deg', eta7ud: 'eta7-ud', eta7d: 'eta7-d' }
-        };
-        const model = modelSelect.value;
-        const p = params[model];
-        if (p.conc) document.getElementById(p.conc).textContent = ` ${window.st_params.conc || 2.0} (Slider: ${window.st_params.conc || 2.0})`;
-        if (p.mw) document.getElementById(p.mw).textContent = ` ${window.st_params.mw || 8.0} (Slider: ${window.st_params.mw || 8.0})`;
-        if (p.eta7) document.getElementById(p.eta7).textContent = ` ${window.st_params.eta7 || 20.0} (Input: ${window.st_params.eta7 || 20.0})`;
-        if (p.temp) document.getElementById(p.temp).textContent = ` ${window.st_params.temp || 35} (Slider: ${window.st_params.temp || 35})`;
-        if (p.eta7d) document.getElementById(p.eta7d).textContent = ` ${window.st_params.eta7d || 7.354} (Input: ${window.st_params.eta7d || 7.354})`;
-    }
-
-    document.getElementById('run-basic').addEventListener('click', () => {
-        showLoading();
-        const data = window.model_basic_pama(
-            window.st_params.conc || 2.0,
-            window.st_params.mw || 8.0,
-            window.st_params.eta7 || 20.0
-        );
-        updateChart(data, 'basic');
-        window.setData(data, 'basic');
-    });
-
-    document.getElementById('run-temp').addEventListener('click', () => {
-        showLoading();
-        const data = window.model_pama_temperature(
-            window.st_params.conc || 2.0,
-            window.st_params.mw || 8.0,
-            window.st_params.eta7 || 15.653,
-            window.st_params.temp || 35
-        );
-        updateChart(data, 'temperature');
-        window.setData(data, 'temperature');
-    });
-
-    document.getElementById('run-deg').addEventListener('click', () => {
-        showLoading();
-        const data = window.model_pama_degradation(
-            window.st_params.conc || 2.0,
-            window.st_params.mw || 8.0,
-            window.st_params.eta7 || 15.653,
-            window.st_params.eta7d || 7.354
-        );
-        updateChart(data, 'degradation');
-        window.setData(data, 'degradation');
-    });
-
-    function updateChart(data, model) {
-        let traces = [];
-        let columns = [];
-        if (model === 'basic') {
-            traces.push({ x: data.shear, y: data['Viscosity (cP)'], name: 'Viscosity', mode: 'lines+markers' });
-            columns = ['shear', 'Viscosity (cP)'];
-        } else if (model === 'temperature') {
-            traces.push({ x: data.shear, y: data['25°C Reference'], name: '25°C', mode: 'lines+markers' });
-            traces.push({ x: data.shear, y: data[Object.keys(data)[2]], name: Object.keys(data)[2], mode: 'lines+markers' });
-            columns = ['shear', '25°C Reference', Object.keys(data)[2]];
-        } else if (model === 'degradation') {
-            traces.push({ x: data.shear, y: data['Polymer UD'], name: 'Polymer UD', mode: 'lines+markers' });
-            traces.push({ x: data.shear, y: data['Polymer Degraded'], name: 'Polymer Degraded', mode: 'lines+markers' });
-            columns = ['shear', 'Polymer UD', 'Polymer Degraded'];
-        }
-
-        Plotly.newPlot(chart, traces, {
-            title: `${model.charAt(0).toUpperCase() + model.slice(1)} PAMA Viscosity vs Shear Rate`,
-            xaxis: { title: 'Shear rate (s⁻¹)', type: 'log', gridcolor: 'lightgray' },
-            yaxis: { title: 'Viscosity (cP)', type: 'log', gridcolor: 'lightgray' },
-            template: 'plotly_white',
-            legend: { orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'center', x: 0.5 },
-            margin: { t: 50, b: 40, l: 40, r: 40 },
-            hovermode: 'x unified'
-        });
-
-        const tbody = dataTable.querySelector('tbody');
-        tbody.innerHTML = '';
-        data.shear.forEach((s, i) => {
-            const row = tbody.insertRow();
-            columns.forEach(col => row.insertCell().textContent = data[col][i].toFixed(3));
-        });
-        dataTable.style.display = 'table';
-    }
-
-    // Expose setData function to Python
-    window.setData = (data, model) => {
-        window.parent.postMessage({ type: 'setData', data: data, model: model }, '*');
-    };
-</script>
-"""
-
-# --- COMBINE AND RENDER ---
-st.components.v1.html(
-    f"""
-    <script>
-        window.model_basic_pama = {json.dumps(model_basic_pama.__code__.co_consts[0])};
-        window.model_pama_temperature = {json.dumps(model_pama_temperature.__code__.co_consts[0])};
-        window.model_pama_degradation = {json.dumps(model_pama_degradation.__code__.co_consts[0])};
-        window.st_params = {json.dumps(st.session_state)};
-        // Receive data from JS and set in session_state
-        window.addEventListener('message', function(event) {{
-            if (event.data.type === 'setData') {{
-                window.parent.postMessage({{ type: 'setSessionState', data: event.data.data, model: event.data.model }}, '*');
-            }}
-        }});
-    </script>
-    """ + html_content + js_content,
-    height=800
+    <div id="content">
+        <h2>PAMA Rheology Models</h2>
+        <p>PAMA (Polymer Analysis and Modeling Application) is a tool for analyzing polymer rheology models with interactive visualizations.</p>
+        <div class="model-section">
+    """,
+    unsafe_allow_html=True,
 )
 
 # --- MODEL IMPLEMENTATIONS ---
@@ -423,43 +260,9 @@ def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
     etaC_D = eta_in + (eta_0C_D - eta_in) * (1 + (lC_D * shear)**2)**((nC_D - 1) / 2)
     return {"shear": shear.tolist(), "Polymer UD": etaC.tolist(), "Polymer Degraded": etaC_D.tolist()}
 
-# --- HANDLE MESSAGE FROM JAVASCRIPT ---
-def handle_message(event):
-    if event.data.type == 'setSessionState':
-        st.session_state.data = event.data.data
-        st.session_state.model = event.data.model
+# --- INTERACTIVE UI ---
+model = st.selectbox("Select Model", ["basic", "temperature", "degradation"])
 
-# --- EXPOSE MESSAGE HANDLER (Streamlit doesn't support direct message events, so we'll simulate with a placeholder) ---
-st.components.v1.html("""
-<script>
-    // Placeholder for message handling (Streamlit limitation)
-    window.dispatchEvent(new Event('message'));
-</script>
-""", height=0)
-
-# --- DOWNLOAD BUTTON ---
-if 'data' in st.session_state and 'model' in st.session_state:
-    data = st.session_state.data
-    model = st.session_state.model
-    columns = []
-    if model == 'basic':
-        columns = ['shear', 'Viscosity (cP)']
-    elif model == 'temperature':
-        columns = ['shear', '25°C Reference', list(data.keys())[2]]
-    elif model == 'degradation':
-        columns = ['shear', 'Polymer UD', 'Polymer Degraded']
-    
-    df = pd.DataFrame({col: data[col] for col in columns})
-    csv = df.to_csv(index=False)
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name=f"{model}_pama.csv",
-        mime="text/csv",
-        key="download-button"
-    )
-
-# --- INTERACTIVE WIDGETS ---
 if 'conc' not in st.session_state:
     st.session_state.conc = 2.0
 if 'mw' not in st.session_state:
@@ -474,5 +277,64 @@ if 'eta7d' not in st.session_state:
 st.session_state.conc = st.sidebar.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
 st.session_state.mw = st.sidebar.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
 st.session_state.eta7 = st.sidebar.number_input("η@7.3 experimental (cP)", min_value=0.01, value=20.0, format="%.3f")
-st.session_state.temp = st.sidebar.slider("Target Temperature (°C)", 0, 100, 35, 1)
-st.session_state.eta7d = st.sidebar.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
+
+if model == "temperature":
+    st.session_state.temp = st.sidebar.slider("Target Temperature (°C)", 0, 100, 35, 1)
+elif model == "degradation":
+    st.session_state.eta7d = st.sidebar.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
+
+if st.button(f"Run {model.capitalize()} Model"):
+    if model == "basic":
+        data = model_basic_pama(st.session_state.conc, st.session_state.mw, st.session_state.eta7)
+    elif model == "temperature":
+        data = model_pama_temperature(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.temp)
+    elif model == "degradation":
+        data = model_pama_degradation(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.eta7d)
+    
+    st.session_state.data = data
+    st.session_state.model = model
+
+    # --- CHART ---
+    traces = []
+    columns = []
+    if model == "basic":
+        traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers"))
+        columns = ["shear", "Viscosity (cP)"]
+    elif model == "temperature":
+        traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers"))
+        traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers"))
+        columns = ["shear", "25°C Reference", list(data.keys())[2]]
+    elif model == "degradation":
+        traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers"))
+        traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers"))
+        columns = ["shear", "Polymer UD", "Polymer Degraded"]
+
+    fig = go.Figure(
+        data=traces,
+        layout=go.Layout(
+            title=f"{model.capitalize()} PAMA Viscosity vs Shear Rate",
+            xaxis={"title": "Shear rate (s⁻¹)", "type": "log", "gridcolor": "lightgray"},
+            yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "lightgray"},
+            template="plotly_white",
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "center", "x": 0.5},
+            margin={"t": 50, "b": 40, "l": 40, "r": 40},
+            hovermode="x unified"
+        )
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- TABLE ---
+    df = pd.DataFrame({col: data[col] for col in columns})
+    st.table(df)
+
+    # --- DOWNLOAD BUTTON ---
+    csv = df.to_csv(index=False)
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name=f"{model}_pama.csv",
+        mime="text/csv",
+        key="download-button"
+    )
+
+st.markdown("</div></div>", unsafe_allow_html=True)
