@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- CSS STYLING (from styles.css, inlined) ---
+# --- CSS STYLING (from styles.css, inlined and adjusted for layout) ---
 st.markdown(
     """
     <style>
@@ -30,9 +30,13 @@ st.markdown(
         text-align: center;
         padding: 1rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 100%;
+        position: fixed;
+        top: 0;
+        z-index: 1000;
     }
     #sidebar {
-        width: 16rem;
+        width: 20rem;
         position: fixed;
         top: 4rem;
         bottom: 0;
@@ -41,10 +45,12 @@ st.markdown(
         border-right: 1px solid #d1d5db;
         overflow-y: auto;
         transition: all 0.3s ease;
+        z-index: 900;
     }
     #content {
-        margin-left: 16rem;
-        padding: 1.5rem;
+        margin-left: 20rem;
+        padding: 5rem 1.5rem 1.5rem 1.5rem; /* Adjusted padding to account for fixed header */
+        min-height: calc(100vh - 4rem);
     }
     .model-section {
         background-color: white;
@@ -101,14 +107,6 @@ st.markdown(
         padding: 0.5rem;
         border-top: 1px solid #d1d5db;
     }
-    #download-link {
-        color: #1e90ff;
-        margin-top: 0.5rem;
-        display: inline-block;
-    }
-    #download-link:hover {
-        text-decoration: underline;
-    }
     h1, h2, h3 {
         color: #1f2937;
     }
@@ -127,15 +125,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- HTML STRUCTURE (simplified for Streamlit) ---
-st.markdown(
-    """
-    <header>
-        <h1>PAMA Rheology Modeling App 🧪</h1>
-        <p>Tool for analyzing polymer rheology models with interactive visualizations.</p>
-    </header>
-    <div id="sidebar">
-        <h3>Table of Contents</h3>
+# --- HEADER ---
+st.markdown("<header><h1>PAMA Rheology Modeling App 🧪</h1><p>Tool for analyzing polymer rheology models with interactive visualizations.</p></header>", unsafe_allow_html=True)
+
+# --- SIDEBAR (Parameters and Model Selection) ---
+with st.sidebar:
+    st.markdown("<div id='sidebar'>", unsafe_allow_html=True)
+    st.markdown("<h3>Table of Contents</h3>", unsafe_allow_html=True)
+    st.markdown("""
         <ul>
             <li><a href="#">PAMA Documentation</a></li>
             <ul>
@@ -156,14 +153,97 @@ st.markdown(
         <ul>
             <li>Eduar Perez (University of Buenos Aires)</li>
         </ul>
-    </div>
-    <div id="content">
-        <h2>PAMA Rheology Models</h2>
-        <p>PAMA (Polymer Analysis and Modeling Application) is a tool for analyzing polymer rheology models with interactive visualizations.</p>
-        <div class="model-section">
-    """,
-    unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True)
+
+    model = st.selectbox("Select Model", ["basic", "temperature", "degradation"])
+
+    if 'conc' not in st.session_state:
+        st.session_state.conc = 2.0
+    if 'mw' not in st.session_state:
+        st.session_state.mw = 8.0
+    if 'eta7' not in st.session_state:
+        st.session_state.eta7 = 20.0
+    if 'temp' not in st.session_state:
+        st.session_state.temp = 35
+    if 'eta7d' not in st.session_state:
+        st.session_state.eta7d = 7.354
+
+    st.session_state.conc = st.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
+    st.session_state.mw = st.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
+    st.session_state.eta7 = st.number_input("η@7.3 experimental (cP)", min_value=0.01, value=20.0, format="%.3f")
+
+    if model == "temperature":
+        st.session_state.temp = st.slider("Target Temperature (°C)", 0, 100, 35, 1)
+    elif model == "degradation":
+        st.session_state.eta7d = st.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
+
+    if st.button(f"Run {model.capitalize()} Model"):
+        if model == "basic":
+            data = model_basic_pama(st.session_state.conc, st.session_state.mw, st.session_state.eta7)
+        elif model == "temperature":
+            data = model_pama_temperature(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.temp)
+        elif model == "degradation":
+            data = model_pama_degradation(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.eta7d)
+        
+        st.session_state.data = data
+        st.session_state.model = model
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# --- CONTENT AREA (Graphs and Fancy Stuff) ---
+st.markdown("<div id='content'>", unsafe_allow_html=True)
+st.markdown("<h2>PAMA Rheology Models</h2>", unsafe_allow_html=True)
+st.markdown("<p>PAMA (Polymer Analysis and Modeling Application) is a tool for analyzing polymer rheology models with interactive visualizations.</p>", unsafe_allow_html=True)
+st.markdown("<div class='model-section'>", unsafe_allow_html=True)
+
+if 'data' in st.session_state and 'model' in st.session_state:
+    data = st.session_state.data
+    model = st.session_state.model
+
+    # --- CHART ---
+    traces = []
+    columns = []
+    if model == "basic":
+        traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers"))
+        columns = ["shear", "Viscosity (cP)"]
+    elif model == "temperature":
+        traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers"))
+        traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers"))
+        columns = ["shear", "25°C Reference", list(data.keys())[2]]
+    elif model == "degradation":
+        traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers"))
+        traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers"))
+        columns = ["shear", "Polymer UD", "Polymer Degraded"]
+
+    fig = go.Figure(
+        data=traces,
+        layout=go.Layout(
+            title=f"{model.capitalize()} PAMA Viscosity vs Shear Rate",
+            xaxis={"title": "Shear rate (s⁻¹)", "type": "log", "gridcolor": "lightgray"},
+            yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "lightgray"},
+            template="plotly_white",
+            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "center", "x": 0.5},
+            margin={"t": 50, "b": 40, "l": 40, "r": 40},
+            hovermode="x unified"
+        )
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- TABLE ---
+    df = pd.DataFrame({col: data[col] for col in columns})
+    st.table(df)
+
+    # --- DOWNLOAD BUTTON ---
+    csv = df.to_csv(index=False)
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name=f"{model}_pama.csv",
+        mime="text/csv",
+        key="download-button"
+    )
+
+st.markdown("</div></div>", unsafe_allow_html=True)
 
 # --- MODEL IMPLEMENTATIONS ---
 def model_basic_pama(C, MW, eta7_exp):
@@ -259,82 +339,3 @@ def model_pama_degradation(C, MW, eta7_exp, eta7_exp_D):
     etaC = eta_in + (eta_0C - eta_in) * (1 + (lC * shear)**2)**((nC - 1) / 2)
     etaC_D = eta_in + (eta_0C_D - eta_in) * (1 + (lC_D * shear)**2)**((nC_D - 1) / 2)
     return {"shear": shear.tolist(), "Polymer UD": etaC.tolist(), "Polymer Degraded": etaC_D.tolist()}
-
-# --- INTERACTIVE UI ---
-model = st.selectbox("Select Model", ["basic", "temperature", "degradation"])
-
-if 'conc' not in st.session_state:
-    st.session_state.conc = 2.0
-if 'mw' not in st.session_state:
-    st.session_state.mw = 8.0
-if 'eta7' not in st.session_state:
-    st.session_state.eta7 = 20.0
-if 'temp' not in st.session_state:
-    st.session_state.temp = 35
-if 'eta7d' not in st.session_state:
-    st.session_state.eta7d = 7.354
-
-st.session_state.conc = st.sidebar.slider("Concentration (g/L)", 0.1, 20.0, 2.0, 0.1)
-st.session_state.mw = st.sidebar.slider("Molecular Weight (MDa)", 0.1, 50.0, 8.0, 0.1)
-st.session_state.eta7 = st.sidebar.number_input("η@7.3 experimental (cP)", min_value=0.01, value=20.0, format="%.3f")
-
-if model == "temperature":
-    st.session_state.temp = st.sidebar.slider("Target Temperature (°C)", 0, 100, 35, 1)
-elif model == "degradation":
-    st.session_state.eta7d = st.sidebar.number_input("η@7.3 experimental (Polymer D) (cP)", min_value=0.01, value=7.354, format="%.3f")
-
-if st.button(f"Run {model.capitalize()} Model"):
-    if model == "basic":
-        data = model_basic_pama(st.session_state.conc, st.session_state.mw, st.session_state.eta7)
-    elif model == "temperature":
-        data = model_pama_temperature(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.temp)
-    elif model == "degradation":
-        data = model_pama_degradation(st.session_state.conc, st.session_state.mw, st.session_state.eta7, st.session_state.eta7d)
-    
-    st.session_state.data = data
-    st.session_state.model = model
-
-    # --- CHART ---
-    traces = []
-    columns = []
-    if model == "basic":
-        traces.append(go.Scatter(x=data["shear"], y=data["Viscosity (cP)"], name="Viscosity", mode="lines+markers"))
-        columns = ["shear", "Viscosity (cP)"]
-    elif model == "temperature":
-        traces.append(go.Scatter(x=data["shear"], y=data["25°C Reference"], name="25°C", mode="lines+markers"))
-        traces.append(go.Scatter(x=data["shear"], y=data[list(data.keys())[2]], name=list(data.keys())[2], mode="lines+markers"))
-        columns = ["shear", "25°C Reference", list(data.keys())[2]]
-    elif model == "degradation":
-        traces.append(go.Scatter(x=data["shear"], y=data["Polymer UD"], name="Polymer UD", mode="lines+markers"))
-        traces.append(go.Scatter(x=data["shear"], y=data["Polymer Degraded"], name="Polymer Degraded", mode="lines+markers"))
-        columns = ["shear", "Polymer UD", "Polymer Degraded"]
-
-    fig = go.Figure(
-        data=traces,
-        layout=go.Layout(
-            title=f"{model.capitalize()} PAMA Viscosity vs Shear Rate",
-            xaxis={"title": "Shear rate (s⁻¹)", "type": "log", "gridcolor": "lightgray"},
-            yaxis={"title": "Viscosity (cP)", "type": "log", "gridcolor": "lightgray"},
-            template="plotly_white",
-            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "center", "x": 0.5},
-            margin={"t": 50, "b": 40, "l": 40, "r": 40},
-            hovermode="x unified"
-        )
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # --- TABLE ---
-    df = pd.DataFrame({col: data[col] for col in columns})
-    st.table(df)
-
-    # --- DOWNLOAD BUTTON ---
-    csv = df.to_csv(index=False)
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name=f"{model}_pama.csv",
-        mime="text/csv",
-        key="download-button"
-    )
-
-st.markdown("</div></div>", unsafe_allow_html=True)
